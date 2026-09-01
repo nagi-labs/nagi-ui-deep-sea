@@ -1,0 +1,3 @@
+# Preserve the untouched CLI ownership baseline. Application-owned barrel files
+# at src/components/nagi/*.ts remain formatted normally.
+src/components/nagi/*/**

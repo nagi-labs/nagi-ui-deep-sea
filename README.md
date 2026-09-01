@@ -21,6 +21,9 @@ vp dev
 The workspace exempts only the pinned `@nagi-labs/nagi-ui@0.1.0` release from
 the minimum-release-age gate so a fresh StackBlitz can install the release on
 publication day; every other dependency remains subject to the default policy.
+Unovis pulls `maplibre-gl` into its dependency graph, but this line-chart sample
+does not use its map renderer, so that package's install script is explicitly
+disabled in `pnpm-workspace.yaml`.
 
 Open the project directly in StackBlitz once the repository is pushed:
 
@@ -53,10 +56,14 @@ Deep Sea replaces Nagi UI's semantic theme tokens and authors component-local
 Button axes such as `--button-tone` and `--button-appearance`. The Nagi style
 compiler validates and expands those finite values during the Vite build.
 
-Motion for Vue is used by the application layer for route transitions, chart
-drawing, selected-station changes, synchronization feedback, and small layout
-responses. Owned Nagi components retain native focus, popover, and dialog
-behavior. `prefers-reduced-motion` makes those state changes immediate.
+The signal chart uses Unovis directly, following Nagi UI's integration recipe.
+Nagi supplies the series tokens and CSS custom-property bridge; the chart data,
+axes, and animated data updates remain Unovis/application vocabulary.
+
+Motion for Vue is used by the application layer for route transitions,
+selected-station changes, synchronization feedback, and small layout responses.
+Owned Nagi components retain native focus, popover, and dialog behavior.
+`prefers-reduced-motion` makes both Motion and Unovis state changes immediate.
 
 ## Verification
 

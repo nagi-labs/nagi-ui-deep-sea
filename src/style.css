@@ -376,11 +376,9 @@
 .signal-chart {
   margin: 0;
 
-  > svg {
-    display: block;
+  > .unovis-xy-container {
     inline-size: 100%;
-    block-size: auto;
-    overflow: visible;
+    block-size: 14rem;
   }
 
   > figcaption {
@@ -393,47 +391,6 @@
     white-space: nowrap;
     border: 0;
   }
-}
-
-.chart-grid {
-  > line {
-    stroke: var(--deep-sea-line);
-    stroke-width: 1;
-    vector-effect: non-scaling-stroke;
-  }
-
-  > text {
-    fill: var(--deep-sea-muted);
-    font-size: 9px;
-    text-anchor: end;
-  }
-}
-
-.chart-axis > text {
-  fill: var(--deep-sea-muted);
-  font-size: 9px;
-}
-
-.chart-area {
-  fill: rgb(87 217 191 / 0.08);
-  stroke: none;
-}
-
-.chart-line {
-  stroke: var(--deep-sea-accent);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
-}
-
-.chart-point {
-  fill: var(--deep-sea-panel);
-  stroke: var(--deep-sea-accent);
-  stroke-width: 2;
-  transform-box: fill-box;
-  transform-origin: center;
-  vector-effect: non-scaling-stroke;
 }
 
 .telemetry-panel {
@@ -477,6 +434,14 @@
   > .unit.-popup {
     border-color: var(--deep-sea-line);
     background: var(--deep-sea-depth);
+  }
+}
+
+.station-detail-stage {
+  display: grid;
+
+  > .station-detail {
+    grid-area: 1 / 1;
   }
 }
 
@@ -742,7 +707,7 @@
     grid-template-columns: minmax(14rem, 0.6fr) minmax(20rem, 1fr);
 
     > header,
-    > .station-detail {
+    > .station-detail-stage {
       grid-column: 1 / -1;
     }
   }
@@ -815,7 +780,7 @@
     grid-template-columns: 1fr;
 
     > header,
-    > .station-detail {
+    > .station-detail-stage {
       grid-column: auto;
     }
   }

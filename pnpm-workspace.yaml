@@ -1,2 +1,4 @@
+allowBuilds:
+  maplibre-gl: false
 minimumReleaseAgeExclude:
   - "@nagi-labs/nagi-ui@0.1.0"

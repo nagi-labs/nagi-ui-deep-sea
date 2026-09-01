@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { VisArea, VisAxis, VisLine, VisXYContainer } from "@unovis/vue";
 import { AnimatePresence, motion, useReducedMotion } from "motion-v";
 import { computed, onBeforeUnmount, ref } from "vue";
 
@@ -17,58 +18,44 @@ const selectedStation = ref<string | null>("kermadec-07");
 const dialogOpen = ref(false);
 const syncing = ref(false);
 const lastSync = ref("04:18 UTC");
-const chartRevision = ref(0);
 let syncTimer: ReturnType<typeof setTimeout> | undefined;
 
 const selected = computed(
   () => stations.find((station) => station.id === selectedStation.value) ?? stations[0],
 );
 
-const chart = computed(() => {
-  const width = 720;
-  const height = 224;
-  const inset = { top: 16, right: 16, bottom: 32, left: 42 };
-  const plotWidth = width - inset.left - inset.right;
-  const plotHeight = height - inset.top - inset.bottom;
-  const floor = 50;
-  const range = 100 - floor;
-  const points = selected.value.signalHistory.map((value, index) => ({
-    value,
-    x: inset.left + (plotWidth * index) / (selected.value.signalHistory.length - 1),
-    y: inset.top + ((100 - value) / range) * plotHeight,
-  }));
-  const line = points
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
-    .join(" ");
-  const baseline = height - inset.bottom;
+interface SignalSample {
+  index: number;
+  value: number;
+}
 
-  return {
-    width,
-    height,
-    inset,
-    plotHeight,
-    points,
-    line,
-    area: `${line} L ${points.at(-1)?.x ?? inset.left} ${baseline} L ${points[0]?.x ?? inset.left} ${baseline} Z`,
-  };
-});
+const chartData = computed<SignalSample[]>(() =>
+  selected.value.signalHistory.map((value, index) => ({ index, value })),
+);
+const sampleIndex = (sample: SignalSample) => sample.index;
+const signalValue = (sample: SignalSample) => sample.value;
+const formatTimeline = (value: number | Date) =>
+  typeof value === "number" ? (signalTimeline[Math.round(value)] ?? "") : "";
+const formatSignal = (value: number | Date) =>
+  typeof value === "number" ? String(Math.round(value)) : "";
 
 const enterTransition = computed(() => ({
-  duration: reduceMotion.value ? 0 : 0.34,
+  duration: reduceMotion.value ? 0 : 0.44,
   ease: [0.22, 1, 0.36, 1] as const,
 }));
 
 const stateTransition = computed(() =>
   reduceMotion.value
     ? { duration: 0 }
-    : { type: "spring" as const, visualDuration: 0.34, bounce: 0.12 },
+    : { type: "spring" as const, visualDuration: 0.56, bounce: 0.16 },
 );
+
+const chartDuration = computed(() => (reduceMotion.value ? 0 : 820));
 
 function syncNetwork() {
   if (syncing.value) return;
 
   syncing.value = true;
-  chartRevision.value += 1;
   clearTimeout(syncTimer);
   syncTimer = setTimeout(
     () => {
@@ -234,100 +221,51 @@ onBeforeUnmount(() => clearTimeout(syncTimer));
           </span>
         </div>
 
-        <figure class="signal-chart">
-          <svg
-            :viewBox="`0 0 ${chart.width} ${chart.height}`"
-            role="img"
-            aria-labelledby="signal-chart-title signal-chart-description"
+        <figure
+          class="signal-chart"
+          data-nagi-unovis
+        >
+          <VisXYContainer
+            class="unovis-xy-container"
+            :data="chartData"
+            :height="224"
+            :y-domain="[50, 100]"
+            :aria-label="`${selected.name} signal quality over the last 12 hours, ending at ${selected.signal} percent`"
           >
-            <title id="signal-chart-title">{{ selected.name }} signal quality</title>
-            <desc id="signal-chart-description">
-              Signal samples over the last 12 hours, ending at {{ selected.signal }} percent.
-            </desc>
-
-            <g
-              class="chart-grid"
-              aria-hidden="true"
-            >
-              <template
-                v-for="tick in [60, 80, 100]"
-                :key="tick"
-              >
-                <line
-                  :x1="chart.inset.left"
-                  :x2="chart.width - chart.inset.right"
-                  :y1="chart.inset.top + ((100 - tick) / 50) * chart.plotHeight"
-                  :y2="chart.inset.top + ((100 - tick) / 50) * chart.plotHeight"
-                />
-                <text
-                  :x="chart.inset.left - 10"
-                  :y="chart.inset.top + ((100 - tick) / 50) * chart.plotHeight + 4"
-                >
-                  {{ tick }}
-                </text>
-              </template>
-            </g>
-
-            <AnimatePresence mode="wait">
-              <motion.g :key="`${selected.id}-${chartRevision}`">
-                <motion.path
-                  class="chart-area"
-                  :d="chart.area"
-                  :initial="reduceMotion ? undefined : { opacity: 0 }"
-                  :animate="{ opacity: 1 }"
-                  :exit="{ opacity: 0 }"
-                  :transition="enterTransition"
-                />
-                <motion.path
-                  class="chart-line"
-                  :d="chart.line"
-                  fill="none"
-                  :initial="reduceMotion ? undefined : { pathLength: 0, opacity: 0.4 }"
-                  :animate="{ pathLength: 1, opacity: 1 }"
-                  :exit="{ opacity: 0 }"
-                  :transition="{
-                    duration: reduceMotion ? 0 : 0.72,
-                    ease: [0.22, 1, 0.36, 1],
-                  }"
-                />
-                <motion.circle
-                  v-for="(point, index) in chart.points"
-                  :key="index"
-                  class="chart-point"
-                  :cx="point.x"
-                  :cy="point.y"
-                  r="3"
-                  :initial="reduceMotion ? undefined : { scale: 0, opacity: 0 }"
-                  :animate="{ scale: 1, opacity: 1 }"
-                  :transition="{
-                    ...stateTransition,
-                    delay: reduceMotion ? 0 : 0.18 + index * 0.045,
-                  }"
-                />
-              </motion.g>
-            </AnimatePresence>
-
-            <g
-              class="chart-axis"
-              aria-hidden="true"
-            >
-              <text
-                v-for="(label, index) in signalTimeline"
-                :key="label"
-                :x="
-                  chart.inset.left +
-                  ((chart.width - chart.inset.left - chart.inset.right) * index) /
-                    (signalTimeline.length - 1)
-                "
-                :y="chart.height - 8"
-                :text-anchor="
-                  index === 0 ? 'start' : index === signalTimeline.length - 1 ? 'end' : 'middle'
-                "
-              >
-                {{ label }}
-              </text>
-            </g>
-          </svg>
+            <VisArea
+              class="unovis-area"
+              :x="sampleIndex"
+              :y="signalValue"
+              :baseline="50"
+              color="var(--vis-color0)"
+              :opacity="0.08"
+              :duration="chartDuration"
+            />
+            <VisLine
+              class="unovis-line"
+              :x="sampleIndex"
+              :y="signalValue"
+              color="var(--vis-color0)"
+              :line-width="2"
+              :duration="chartDuration"
+            />
+            <VisAxis
+              class="unovis-axis"
+              type="x"
+              :tick-values="chartData.map((sample) => sample.index)"
+              :tick-format="formatTimeline"
+              :tick-line="false"
+              :domain-line="false"
+            />
+            <VisAxis
+              class="unovis-axis"
+              type="y"
+              :tick-values="[60, 80, 100]"
+              :tick-format="formatSignal"
+              :tick-line="false"
+              :domain-line="false"
+            />
+          </VisXYContainer>
           <figcaption>
             Seven signal samples for {{ selected.name }}, ranging from
             {{ Math.min(...selected.signalHistory) }} to {{ Math.max(...selected.signalHistory) }}
@@ -362,53 +300,55 @@ onBeforeUnmount(() => clearTimeout(syncTimer));
           clearable
         />
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            :key="selected.id"
-            class="station-detail"
-            :initial="reduceMotion ? undefined : { opacity: 0, x: 8 }"
-            :animate="{ opacity: 1, x: 0 }"
-            :exit="{ opacity: 0, x: -8 }"
-            :transition="enterTransition"
-          >
-            <div class="telemetry-list">
-              <n-progress
-                label="Signal"
-                :value="selected.signal"
-                :max="100"
-              />
-              <n-progress
-                label="Battery"
-                :value="selected.battery"
-                :max="100"
-              />
-              <n-progress
-                label="Sample capacity"
-                :value="selected.capacity"
-                :max="100"
-              />
-            </div>
+        <div class="station-detail-stage">
+          <AnimatePresence>
+            <motion.div
+              :key="selected.id"
+              class="station-detail"
+              :initial="reduceMotion ? undefined : { opacity: 0, x: 18 }"
+              :animate="{ opacity: 1, x: 0 }"
+              :exit="{ opacity: 0, x: -18 }"
+              :transition="enterTransition"
+            >
+              <div class="telemetry-list">
+                <n-progress
+                  label="Signal"
+                  :value="selected.signal"
+                  :max="100"
+                />
+                <n-progress
+                  label="Battery"
+                  :value="selected.battery"
+                  :max="100"
+                />
+                <n-progress
+                  label="Sample capacity"
+                  :value="selected.capacity"
+                  :max="100"
+                />
+              </div>
 
-            <dl class="readings">
-              <div>
-                <dt>Pressure</dt>
-                <dd>{{ selected.pressure }}</dd>
-              </div>
-              <div>
-                <dt>Salinity</dt>
-                <dd>{{ selected.salinity }}</dd>
-              </div>
-              <div>
-                <dt>Drift</dt>
-                <dd>{{ selected.drift }}</dd>
-              </div>
-              <div>
-                <dt>Last packet</dt>
-                <dd>{{ selected.lastPacket }}</dd>
-              </div>
-            </dl>
-          </motion.div>
-        </AnimatePresence>
+              <dl class="readings">
+                <div>
+                  <dt>Pressure</dt>
+                  <dd>{{ selected.pressure }}</dd>
+                </div>
+                <div>
+                  <dt>Salinity</dt>
+                  <dd>{{ selected.salinity }}</dd>
+                </div>
+                <div>
+                  <dt>Drift</dt>
+                  <dd>{{ selected.drift }}</dd>
+                </div>
+                <div>
+                  <dt>Last packet</dt>
+                  <dd>{{ selected.lastPacket }}</dd>
+                </div>
+              </dl>
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </motion.aside>
     </section>
 

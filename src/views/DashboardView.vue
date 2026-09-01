@@ -1,23 +1,82 @@
 <script setup lang="ts">
-import { motion, useReducedMotion } from "motion-v";
-import { computed, ref } from "vue";
+import { AnimatePresence, motion, useReducedMotion } from "motion-v";
+import { computed, onBeforeUnmount, ref } from "vue";
 
 import { NBadge, NButton, NCard, NCombobox, NDialog, NProgress, NTable } from "../components/nagi";
-import { stationColumns, stationOptions, stations, type StationStatus } from "../data/stations";
+import {
+  signalTimeline,
+  stationColumns,
+  stationOptions,
+  stations,
+  type StationStatus,
+} from "../data/stations";
 
 const reduceMotion = useReducedMotion();
 const query = ref("");
-const selectedStation = ref<string | null>("hadal-07");
+const selectedStation = ref<string | null>("kermadec-07");
 const dialogOpen = ref(false);
+const syncing = ref(false);
 const lastSync = ref("04:18 UTC");
+const chartRevision = ref(0);
+let syncTimer: ReturnType<typeof setTimeout> | undefined;
+
+const selected = computed(
+  () => stations.find((station) => station.id === selectedStation.value) ?? stations[0],
+);
+
+const chart = computed(() => {
+  const width = 720;
+  const height = 224;
+  const inset = { top: 16, right: 16, bottom: 32, left: 42 };
+  const plotWidth = width - inset.left - inset.right;
+  const plotHeight = height - inset.top - inset.bottom;
+  const floor = 50;
+  const range = 100 - floor;
+  const points = selected.value.signalHistory.map((value, index) => ({
+    value,
+    x: inset.left + (plotWidth * index) / (selected.value.signalHistory.length - 1),
+    y: inset.top + ((100 - value) / range) * plotHeight,
+  }));
+  const line = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+  const baseline = height - inset.bottom;
+
+  return {
+    width,
+    height,
+    inset,
+    plotHeight,
+    points,
+    line,
+    area: `${line} L ${points.at(-1)?.x ?? inset.left} ${baseline} L ${points[0]?.x ?? inset.left} ${baseline} Z`,
+  };
+});
 
 const enterTransition = computed(() => ({
-  duration: reduceMotion.value ? 0 : 0.48,
+  duration: reduceMotion.value ? 0 : 0.34,
   ease: [0.22, 1, 0.36, 1] as const,
 }));
 
-function syncArray() {
-  lastSync.value = "just now";
+const stateTransition = computed(() =>
+  reduceMotion.value
+    ? { duration: 0 }
+    : { type: "spring" as const, visualDuration: 0.34, bounce: 0.12 },
+);
+
+function syncNetwork() {
+  if (syncing.value) return;
+
+  syncing.value = true;
+  chartRevision.value += 1;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(
+    () => {
+      syncing.value = false;
+      lastSync.value = "just now";
+    },
+    reduceMotion.value ? 0 : 720,
+  );
 }
 
 function badgeTone(status: StationStatus) {
@@ -25,124 +84,240 @@ function badgeTone(status: StationStatus) {
   if (status === "Watch") return "warning";
   return "accent";
 }
+
+onBeforeUnmount(() => clearTimeout(syncTimer));
 </script>
 
 <template>
   <main class="dashboard-view">
-    <motion.header
-      class="page-heading"
-      :initial="reduceMotion ? undefined : { opacity: 0, y: 12 }"
-      :animate="{ opacity: 1, y: 0 }"
-      :transition="enterTransition"
-    >
+    <header class="page-heading">
       <div class="heading-copy">
-        <p class="eyebrow">North Pacific array · 04:20 UTC</p>
-        <h1>Command deck</h1>
-        <p class="lede">
-          A live operational view of the instruments working below the photic zone.
-        </p>
+        <p class="eyebrow">Pacific monitoring network</p>
+        <h1>Network overview</h1>
+        <p class="lede">Station health, signal quality, and scheduled transfers.</p>
       </div>
       <div class="actions">
-        <n-button @click="syncArray">Synchronize</n-button>
-        <n-dialog
-          class="plan-dive-dialog"
-          v-model:open="dialogOpen"
-          trigger-label="Plan a dive"
-          title="Plan a dive"
-          description="Create a draft mission around the current abyssal conditions."
+        <n-button
+          class="sync-button"
+          :disabled="syncing"
+          @click="syncNetwork"
         >
-          <div class="dialog-copy">
-            <span class="coordinate">31° 12′ S · 176° 28′ W</span>
-            <p>
-              Hadal 07 reports a stable water column and a 96% acoustic link. The draft remains
-              local until an operator confirms it.
-            </p>
-          </div>
+          <motion.span
+            class="sync-icon"
+            aria-hidden="true"
+            :animate="{ rotate: syncing ? 360 : 0 }"
+            :transition="{ duration: reduceMotion ? 0 : 0.62, ease: 'easeInOut' }"
+          >
+            ↻
+          </motion.span>
+          {{ syncing ? "Syncing" : "Sync data" }}
+        </n-button>
+        <n-dialog
+          class="report-dialog"
+          v-model:open="dialogOpen"
+          trigger-label="Create report"
+          title="Create network report"
+          description="Export the current operational snapshot for the handover log."
+        >
+          <p class="dialog-copy">
+            The report includes station status, the selected signal history, and the latest
+            telemetry received by this browser session.
+          </p>
           <template #actions>
-            <n-button class="confirm-dive">Create draft</n-button>
+            <n-button class="confirm-report">Export report</n-button>
           </template>
         </n-dialog>
       </div>
-    </motion.header>
+    </header>
 
     <motion.section
       class="metric-grid"
-      aria-label="Current array metrics"
-      :initial="reduceMotion ? undefined : { opacity: 0, y: 16 }"
+      aria-label="Network summary"
+      :initial="reduceMotion ? undefined : { opacity: 0, y: 8 }"
       :animate="{ opacity: 1, y: 0 }"
-      :transition="{ ...enterTransition, delay: reduceMotion ? 0 : 0.06 }"
+      :transition="enterTransition"
     >
-      <article class="metric">
-        <span class="label">Active stations</span>
-        <strong>18</strong>
-        <span class="change -positive">All primary links online</span>
-      </article>
-      <article class="metric">
-        <span class="label">Deepest signal</span>
-        <strong>9,842 m</strong>
-        <span class="change">Hadal 07 · Kermadec</span>
-      </article>
-      <article class="metric">
-        <span class="label">Water column</span>
-        <strong>1.7 °C</strong>
-        <span class="change">Stable over 6 hours</span>
-      </article>
-      <article class="metric">
-        <span class="label">Next uplink</span>
-        <strong>00:42</strong>
-        <span class="change">Umbra 04 surfacing</span>
-      </article>
+      <motion.article
+        class="metric"
+        layout
+        :while-hover="reduceMotion ? undefined : { y: -2 }"
+        :transition="stateTransition"
+      >
+        <span class="label">Stations online</span>
+        <strong>18 / 18</strong>
+        <span class="change -positive">All reporting</span>
+      </motion.article>
+      <motion.article
+        class="metric"
+        layout
+        :while-hover="reduceMotion ? undefined : { y: -2 }"
+        :transition="stateTransition"
+      >
+        <span class="label">Selected signal</span>
+        <AnimatePresence mode="wait">
+          <motion.strong
+            :key="selected.id"
+            :initial="reduceMotion ? undefined : { opacity: 0, y: 6 }"
+            :animate="{ opacity: 1, y: 0 }"
+            :exit="{ opacity: 0, y: -6 }"
+            :transition="enterTransition"
+          >
+            {{ selected.signal }}%
+          </motion.strong>
+        </AnimatePresence>
+        <span class="change">{{ selected.name }}</span>
+      </motion.article>
+      <motion.article
+        class="metric"
+        layout
+        :while-hover="reduceMotion ? undefined : { y: -2 }"
+        :transition="stateTransition"
+      >
+        <span class="label">Network availability</span>
+        <strong>99.98%</strong>
+        <span class="change">30-day window</span>
+      </motion.article>
+      <motion.article
+        class="metric"
+        layout
+        :while-hover="reduceMotion ? undefined : { y: -2 }"
+        :transition="stateTransition"
+      >
+        <span class="label">Next transfer</span>
+        <strong>42 min</strong>
+        <span class="change">Sandwich 04</span>
+      </motion.article>
     </motion.section>
 
     <section class="operations-grid">
-      <motion.div
-        class="sonar-card"
-        :initial="reduceMotion ? undefined : { opacity: 0, scale: 0.985 }"
-        :animate="{ opacity: 1, scale: 1 }"
-        :transition="{ ...enterTransition, delay: reduceMotion ? 0 : 0.12 }"
+      <n-card
+        class="signal-card"
+        title="Signal quality"
+        :description="`${selected.name} · last 12 hours`"
       >
-        <n-card
-          title="Abyssal field"
-          description="Acoustic contacts across the active observation radius"
-        >
-          <div class="sonar-field">
-            <div
-              class="sonar-rings"
+        <div class="chart-summary">
+          <span>Current</span>
+          <strong>{{ selected.signal }}%</strong>
+          <span :class="['trend', selected.signal >= 80 ? '-positive' : '-attention']">
+            {{ selected.signal >= 80 ? "Stable" : "Needs review" }}
+          </span>
+        </div>
+
+        <figure class="signal-chart">
+          <svg
+            :viewBox="`0 0 ${chart.width} ${chart.height}`"
+            role="img"
+            aria-labelledby="signal-chart-title signal-chart-description"
+          >
+            <title id="signal-chart-title">{{ selected.name }} signal quality</title>
+            <desc id="signal-chart-description">
+              Signal samples over the last 12 hours, ending at {{ selected.signal }} percent.
+            </desc>
+
+            <g
+              class="chart-grid"
               aria-hidden="true"
             >
-              <span class="ring -one" />
-              <span class="ring -two" />
-              <span class="ring -three" />
-              <span class="sweep" />
-              <span class="contact -a" />
-              <span class="contact -b" />
-              <span class="contact -c" />
-              <span class="contact -d" />
-            </div>
-            <div class="sonar-reading">
-              <span class="kicker">Primary contact</span>
-              <strong>Hadal 07</strong>
-              <span>31° 12′ S · 176° 28′ W</span>
-              <span class="depth">−9,842 m</span>
-            </div>
-          </div>
-        </n-card>
-      </motion.div>
+              <template
+                v-for="tick in [60, 80, 100]"
+                :key="tick"
+              >
+                <line
+                  :x1="chart.inset.left"
+                  :x2="chart.width - chart.inset.right"
+                  :y1="chart.inset.top + ((100 - tick) / 50) * chart.plotHeight"
+                  :y2="chart.inset.top + ((100 - tick) / 50) * chart.plotHeight"
+                />
+                <text
+                  :x="chart.inset.left - 10"
+                  :y="chart.inset.top + ((100 - tick) / 50) * chart.plotHeight + 4"
+                >
+                  {{ tick }}
+                </text>
+              </template>
+            </g>
+
+            <AnimatePresence mode="wait">
+              <motion.g :key="`${selected.id}-${chartRevision}`">
+                <motion.path
+                  class="chart-area"
+                  :d="chart.area"
+                  :initial="reduceMotion ? undefined : { opacity: 0 }"
+                  :animate="{ opacity: 1 }"
+                  :exit="{ opacity: 0 }"
+                  :transition="enterTransition"
+                />
+                <motion.path
+                  class="chart-line"
+                  :d="chart.line"
+                  fill="none"
+                  :initial="reduceMotion ? undefined : { pathLength: 0, opacity: 0.4 }"
+                  :animate="{ pathLength: 1, opacity: 1 }"
+                  :exit="{ opacity: 0 }"
+                  :transition="{
+                    duration: reduceMotion ? 0 : 0.72,
+                    ease: [0.22, 1, 0.36, 1],
+                  }"
+                />
+                <motion.circle
+                  v-for="(point, index) in chart.points"
+                  :key="index"
+                  class="chart-point"
+                  :cx="point.x"
+                  :cy="point.y"
+                  r="3"
+                  :initial="reduceMotion ? undefined : { scale: 0, opacity: 0 }"
+                  :animate="{ scale: 1, opacity: 1 }"
+                  :transition="{
+                    ...stateTransition,
+                    delay: reduceMotion ? 0 : 0.18 + index * 0.045,
+                  }"
+                />
+              </motion.g>
+            </AnimatePresence>
+
+            <g
+              class="chart-axis"
+              aria-hidden="true"
+            >
+              <text
+                v-for="(label, index) in signalTimeline"
+                :key="label"
+                :x="
+                  chart.inset.left +
+                  ((chart.width - chart.inset.left - chart.inset.right) * index) /
+                    (signalTimeline.length - 1)
+                "
+                :y="chart.height - 8"
+                :text-anchor="
+                  index === 0 ? 'start' : index === signalTimeline.length - 1 ? 'end' : 'middle'
+                "
+              >
+                {{ label }}
+              </text>
+            </g>
+          </svg>
+          <figcaption>
+            Seven signal samples for {{ selected.name }}, ranging from
+            {{ Math.min(...selected.signalHistory) }} to {{ Math.max(...selected.signalHistory) }}
+            percent.
+          </figcaption>
+        </figure>
+      </n-card>
 
       <motion.aside
         class="telemetry-panel"
-        :initial="reduceMotion ? undefined : { opacity: 0, x: 16 }"
-        :animate="{ opacity: 1, x: 0 }"
-        :transition="{ ...enterTransition, delay: reduceMotion ? 0 : 0.16 }"
+        layout
+        :transition="stateTransition"
       >
         <header>
           <div>
             <span class="eyebrow">Selected station</span>
-            <h2>Telemetry</h2>
+            <h2>Station details</h2>
           </div>
           <n-badge
-            label="Live"
-            tone="success"
+            :label="selected.status"
+            :tone="badgeTone(selected.status)"
           />
         </header>
 
@@ -150,65 +325,92 @@ function badgeTone(status: StationStatus) {
           class="station-picker"
           v-model="query"
           v-model:selected="selectedStation"
-          label="Jump to station"
+          label="Station"
           :items="stationOptions"
-          placeholder="Search the array"
+          placeholder="Search stations"
           clearable
         />
 
-        <div class="telemetry-list">
-          <n-progress
-            label="Acoustic link"
-            :value="96"
-            :max="100"
-          />
-          <n-progress
-            label="Battery reserve"
-            :value="78"
-            :max="100"
-          />
-          <n-progress
-            label="Sample capacity"
-            :value="61"
-            :max="100"
-          />
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            :key="selected.id"
+            class="station-detail"
+            :initial="reduceMotion ? undefined : { opacity: 0, x: 8 }"
+            :animate="{ opacity: 1, x: 0 }"
+            :exit="{ opacity: 0, x: -8 }"
+            :transition="enterTransition"
+          >
+            <div class="telemetry-list">
+              <n-progress
+                label="Signal"
+                :value="selected.signal"
+                :max="100"
+              />
+              <n-progress
+                label="Battery"
+                :value="selected.battery"
+                :max="100"
+              />
+              <n-progress
+                label="Sample capacity"
+                :value="selected.capacity"
+                :max="100"
+              />
+            </div>
 
-        <dl class="readings">
-          <div>
-            <dt>Pressure</dt>
-            <dd>99.4 MPa</dd>
-          </div>
-          <div>
-            <dt>Salinity</dt>
-            <dd>34.7 PSU</dd>
-          </div>
-          <div>
-            <dt>Drift</dt>
-            <dd>0.12 kn NE</dd>
-          </div>
-        </dl>
+            <dl class="readings">
+              <div>
+                <dt>Pressure</dt>
+                <dd>{{ selected.pressure }}</dd>
+              </div>
+              <div>
+                <dt>Salinity</dt>
+                <dd>{{ selected.salinity }}</dd>
+              </div>
+              <div>
+                <dt>Drift</dt>
+                <dd>{{ selected.drift }}</dd>
+              </div>
+              <div>
+                <dt>Last packet</dt>
+                <dd>{{ selected.lastPacket }}</dd>
+              </div>
+            </dl>
+          </motion.div>
+        </AnimatePresence>
       </motion.aside>
     </section>
 
     <motion.section
       class="station-section"
-      :initial="reduceMotion ? undefined : { opacity: 0, y: 18 }"
-      :animate="{ opacity: 1, y: 0 }"
-      :transition="{ ...enterTransition, delay: reduceMotion ? 0 : 0.2 }"
+      :initial="reduceMotion ? undefined : { opacity: 0, y: 10 }"
+      :while-in-view="{ opacity: 1, y: 0 }"
+      :in-view-options="{ once: true, amount: 0.2 }"
+      :transition="enterTransition"
     >
       <header>
         <div>
-          <h2>Observation array</h2>
-          <p>Priority stations ordered by current mission relevance.</p>
+          <h2>Stations</h2>
+          <p>Priority stations ordered by operational status.</p>
         </div>
-        <span class="sync-time">Last synchronized {{ lastSync }}</span>
+        <AnimatePresence mode="wait">
+          <motion.span
+            :key="lastSync"
+            class="sync-time"
+            :initial="reduceMotion ? undefined : { opacity: 0, y: 4 }"
+            :animate="{ opacity: 1, y: 0 }"
+            :exit="{ opacity: 0, y: -4 }"
+            :transition="enterTransition"
+          >
+            Updated {{ lastSync }}
+          </motion.span>
+        </AnimatePresence>
       </header>
 
       <n-table
         :rows="stations"
         :columns="stationColumns"
-        caption="Priority observation stations"
+        caption="Priority monitoring stations"
         caption-hidden
         row-key="id"
       >

@@ -1,12 +1,15 @@
 <script setup lang="ts">
+import { AnimatePresence, motion, useReducedMotion } from "motion-v";
 import { RouterLink, RouterView } from "vue-router";
 
 import { NSidebar, NSidebarLink, NSidebarSection } from "./components/nagi";
 
 const navigation = [
-  { label: "Command deck", to: "/" },
+  { label: "Overview", to: "/" },
   { label: "Owned source", to: "/components" },
 ] as const;
+
+const reduceMotion = useReducedMotion();
 </script>
 
 <template>
@@ -23,12 +26,11 @@ const navigation = [
         <span
           class="mark"
           aria-hidden="true"
+          >DS</span
         >
-          <span class="pulse" />
-        </span>
         <span class="wordmark">
           <strong>Deep Sea</strong>
-          <small>Abyssal operations</small>
+          <small>Monitoring</small>
         </span>
       </a>
 
@@ -45,6 +47,17 @@ const navigation = [
             :current="isExactActive"
             :navigate="navigate"
           >
+            <motion.span
+              v-if="isExactActive"
+              class="nav-indicator"
+              layout-id="active-navigation"
+              :transition="
+                reduceMotion
+                  ? { duration: 0 }
+                  : { type: 'spring', visualDuration: 0.28, bounce: 0.1 }
+              "
+              aria-hidden="true"
+            />
             {{ item.label }}
           </n-sidebar-link>
         </router-link>
@@ -57,8 +70,8 @@ const navigation = [
             aria-hidden="true"
           />
           <span>
-            <strong>Array connected</strong>
-            <small>18 beacons reporting</small>
+            <strong>Network online</strong>
+            <small>18 stations reporting</small>
           </span>
         </div>
       </template>
@@ -73,9 +86,8 @@ const navigation = [
           <span
             class="mark"
             aria-hidden="true"
+            >DS</span
           >
-            <span class="pulse" />
-          </span>
           <span class="wordmark"><strong>Deep Sea</strong></span>
         </a>
         <nav aria-label="Primary navigation">
@@ -89,7 +101,20 @@ const navigation = [
         </nav>
       </header>
 
-      <router-view />
+      <router-view v-slot="{ Component, route }">
+        <AnimatePresence mode="wait">
+          <motion.div
+            :key="route.path"
+            class="route-view"
+            :initial="reduceMotion ? undefined : { opacity: 0, x: 8 }"
+            :animate="{ opacity: 1, x: 0 }"
+            :exit="{ opacity: 0, x: -8 }"
+            :transition="{ duration: reduceMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }"
+          >
+            <component :is="Component" />
+          </motion.div>
+        </AnimatePresence>
+      </router-view>
     </div>
   </div>
 </template>

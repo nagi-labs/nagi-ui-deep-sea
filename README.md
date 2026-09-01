@@ -3,7 +3,7 @@
 Deep Sea is an owned Nagi UI reference application. It shows the same system at
 two scales:
 
-- a working ocean-observation command deck composed from ordinary Vue templates;
+- a compact monitoring workspace composed from ordinary Vue templates;
 - all 64 canonical Nagi UI components copied into the repository as owned source.
 
 The visual theme lives in [`src/theme/deep-sea.css`](src/theme/deep-sea.css).
@@ -53,9 +53,10 @@ Deep Sea replaces Nagi UI's semantic theme tokens and authors component-local
 Button axes such as `--button-tone` and `--button-appearance`. The Nagi style
 compiler validates and expands those finite values during the Vite build.
 
-Motion for Vue is used by the application layer for page and section entrance.
-Owned Nagi components retain native focus, popover, and dialog behavior.
-`prefers-reduced-motion` removes both Motion durations and ambient sonar motion.
+Motion for Vue is used by the application layer for route transitions, chart
+drawing, selected-station changes, synchronization feedback, and small layout
+responses. Owned Nagi components retain native focus, popover, and dialog
+behavior. `prefers-reduced-motion` makes those state changes immediate.
 
 ## Verification
 

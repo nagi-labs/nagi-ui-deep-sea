@@ -13,18 +13,13 @@ const sourceColumns = [
 
 <template>
   <main class="source-view">
-    <motion.header
-      class="page-heading"
-      :initial="reduceMotion ? undefined : { opacity: 0, y: 12 }"
-      :animate="{ opacity: 1, y: 0 }"
-      :transition="{ duration: reduceMotion ? 0 : 0.45 }"
-    >
+    <header class="page-heading">
       <div class="heading-copy">
         <p class="eyebrow">Source ownership</p>
-        <h1>The whole system is here.</h1>
+        <h1>Owned component source</h1>
         <p class="lede">
-          Every canonical Vue component was copied by the Nagi UI ownership command. Open any file,
-          change the markup, and keep its behavior contract visible.
+          All 64 canonical components are checked into this repository. Their Vue templates,
+          behavior wiring, styles, and available Definitions can be reviewed together.
         </p>
       </div>
       <a
@@ -35,7 +30,7 @@ const sourceColumns = [
       >
         Browse source ↗
       </a>
-    </motion.header>
+    </header>
 
     <section
       class="ownership-summary"
@@ -57,8 +52,8 @@ const sourceColumns = [
 
     <n-card
       class="ownership-card"
-      title="What ownership means"
-      description="Package behavior remains reusable; visible Vue structure belongs to this repository."
+      title="Ownership model"
+      description="The installed package supplies shared behavior; the visible Vue structure belongs to this repository."
     >
       <div class="ownership-path">
         <code>src/components/nagi/</code>
@@ -68,7 +63,7 @@ const sourceColumns = [
       <template #footer>
         <div class="axis-example">
           <span>Deep Sea styles the owned Button through component-local CSS axes.</span>
-          <n-button class="axis-button">Bioluminescent action</n-button>
+          <n-button class="axis-button">Styled action</n-button>
         </div>
       </template>
     </n-card>
@@ -83,11 +78,12 @@ const sourceColumns = [
           v-for="(group, groupIndex) in column"
           :key="group.name"
           class="source-group"
-          :initial="reduceMotion ? undefined : { opacity: 0, y: 12 }"
-          :animate="{ opacity: 1, y: 0 }"
+          :initial="reduceMotion ? undefined : { opacity: 0, y: 8 }"
+          :while-in-view="{ opacity: 1, y: 0 }"
+          :in-view-options="{ once: true, amount: 0.12 }"
           :transition="{
-            duration: reduceMotion ? 0 : 0.35,
-            delay: reduceMotion ? 0 : (columnIndex * 3 + groupIndex) * 0.04,
+            duration: reduceMotion ? 0 : 0.28,
+            delay: reduceMotion ? 0 : (columnIndex * 3 + groupIndex) * 0.025,
           }"
         >
           <header>

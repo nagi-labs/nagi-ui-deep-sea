@@ -14,7 +14,7 @@
   --n-space-8: 1rem;
   --n-radius-1: 0.25rem;
   --n-radius-2: 0.5rem;
-  --n-radius-3: 0.75rem;
+  --n-radius-3: 0.625rem;
   --n-border-width-1: 1px;
   --n-border-width-2: 2px;
   --n-font-size-1: 0.625rem;
@@ -23,66 +23,65 @@
   --n-font-size-4: 0.875rem;
   --n-font-size-5: 1rem;
   --n-font-size-6: 1.25rem;
-  --n-shadow-1: 0 1px 2px rgb(0 4 7 / 0.24);
-  --n-shadow-2: 0 10px 28px rgb(0 4 7 / 0.28);
-  --n-shadow-3: 0 24px 70px rgb(0 4 7 / 0.46);
+  --n-shadow-1: 0 1px 2px rgb(0 0 0 / 0.18);
+  --n-shadow-2: 0 8px 24px rgb(0 0 0 / 0.22);
+  --n-shadow-3: 0 18px 48px rgb(0 0 0 / 0.34);
   --n-z-dropdown: 1000;
   --n-z-sticky: 1100;
   --n-z-modal: 1200;
   --n-z-toast: 1300;
 
-  --nagi-color-accent: #61e8c7;
-  --nagi-color-border: #24505a;
-  --nagi-color-border-muted: #173c45;
-  --nagi-color-danger: #ff7387;
-  --nagi-color-focus-ring: #7bf4d8;
-  --nagi-color-series-1: #61e8c7;
-  --nagi-color-series-2: #48bcea;
-  --nagi-color-series-3: #7d91ff;
-  --nagi-color-series-4: #b480ff;
-  --nagi-color-series-5: #f4c96b;
-  --nagi-color-series-6: #ff7f9f;
-  --nagi-color-success: #61e8c7;
-  --nagi-color-surface: #08242c;
-  --nagi-color-surface-accent: #0d3b40;
-  --nagi-color-surface-active: #10323a;
-  --nagi-color-surface-danger: #3c202b;
-  --nagi-color-surface-success: #0b3737;
-  --nagi-color-surface-warning: #3b3524;
-  --nagi-color-text: #e5f5f2;
-  --nagi-color-text-disabled: #668087;
-  --nagi-color-text-muted: #91adb1;
-  --nagi-color-warning: #f4c96b;
+  --nagi-color-accent: #57d9bf;
+  --nagi-color-border: #39434d;
+  --nagi-color-border-muted: #29323a;
+  --nagi-color-danger: #f27889;
+  --nagi-color-focus-ring: #75e5ce;
+  --nagi-color-series-1: #57d9bf;
+  --nagi-color-series-2: #67aee8;
+  --nagi-color-series-3: #8793e8;
+  --nagi-color-series-4: #b28bd9;
+  --nagi-color-series-5: #d8b866;
+  --nagi-color-series-6: #dc7891;
+  --nagi-color-success: #57d9bf;
+  --nagi-color-surface: #151b21;
+  --nagi-color-surface-accent: #1b2d2d;
+  --nagi-color-surface-active: #222a31;
+  --nagi-color-surface-danger: #342127;
+  --nagi-color-surface-success: #17302b;
+  --nagi-color-surface-warning: #312d20;
+  --nagi-color-text: #e8eaed;
+  --nagi-color-text-disabled: #666e77;
+  --nagi-color-text-muted: #9299a2;
+  --nagi-color-warning: #d8b866;
   --nagi-font-size-icon: 0.75rem;
   --nagi-font-size-label: 0.6875rem;
-  --nagi-radius-control: 0.625rem;
-  --nagi-radius-item: 0.5rem;
-  --nagi-radius-overlay: 1rem;
-  --nagi-shadow-focus: 0 0 0 3px rgb(97 232 199 / 0.24);
-  --nagi-shadow-overlay: 0 24px 70px rgb(0 4 7 / 0.48);
-  --nagi-size-control: 2.5rem;
-  --nagi-space-control: 0.625rem 0.875rem;
-  --nagi-space-item: 0.5rem 0.75rem;
-  --nagi-space-item-gap: 0.5rem;
-  --nagi-space-surface-inset: 0.375rem;
+  --nagi-radius-control: 0.45rem;
+  --nagi-radius-item: 0.375rem;
+  --nagi-radius-overlay: 0.625rem;
+  --nagi-shadow-focus: 0 0 0 3px rgb(87 217 191 / 0.2);
+  --nagi-shadow-overlay: 0 18px 48px rgb(0 0 0 / 0.38);
+  --nagi-size-control: 2rem;
+  --nagi-space-control: 0.375rem 0.625rem;
+  --nagi-space-item: 0.4rem 0.625rem;
+  --nagi-space-item-gap: 0.375rem;
+  --nagi-space-surface-inset: 0.25rem;
 
-  --deep-sea-ink: #e5f5f2;
-  --deep-sea-muted: #91adb1;
-  --deep-sea-abyss: #020d12;
-  --deep-sea-depth: #05171d;
-  --deep-sea-panel: #08242c;
-  --deep-sea-panel-raised: #0b2a33;
-  --deep-sea-line: #173c45;
-  --deep-sea-glow: #61e8c7;
-  --deep-sea-blue: #48bcea;
+  --deep-sea-ink: #e8eaed;
+  --deep-sea-muted: #9299a2;
+  --deep-sea-abyss: #0b0f13;
+  --deep-sea-depth: #10151a;
+  --deep-sea-panel: #151b21;
+  --deep-sea-panel-raised: #1a2128;
+  --deep-sea-line: #29323a;
+  --deep-sea-line-strong: #3a4650;
+  --deep-sea-accent: #57d9bf;
+  --deep-sea-success: #57d9bf;
 }
 
 body {
   min-inline-size: 20rem;
   min-block-size: 100svb;
-  background:
-    radial-gradient(circle at 72% -10%, rgb(40 132 148 / 0.18), transparent 36rem),
-    var(--deep-sea-abyss);
+  background: var(--deep-sea-abyss);
 }
 
 button,

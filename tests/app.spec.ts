@@ -15,8 +15,8 @@ test("the command deck is operable and accessible", async ({ page }) => {
   await page.getByRole("button", { name: "Sync data" }).click();
   await expect(page.getByText("Updated just now")).toBeVisible();
 
-  await page.getByRole("combobox", { name: "Station" }).click();
-  await page.getByRole("option", { name: "Clarion 12 · Clarion Fracture" }).click();
+  await expect(page.getByRole("combobox", { name: "Find another station" })).toBeVisible();
+  await page.getByRole("button", { name: "Clarion 12", exact: true }).click();
   await expect(page.getByRole("img", { name: "Clarion 12 signal quality" })).toBeVisible();
   await expect(page.getByText("51.6 MPa")).toBeVisible();
 

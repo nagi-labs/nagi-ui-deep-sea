@@ -79,6 +79,11 @@ function syncNetwork() {
   );
 }
 
+function selectStation(stationId: string) {
+  selectedStation.value = stationId;
+  query.value = "";
+}
+
 function badgeTone(status: StationStatus) {
   if (status === "Nominal") return "success";
   if (status === "Watch") return "warning";
@@ -195,6 +200,32 @@ onBeforeUnmount(() => clearTimeout(syncTimer));
         title="Signal quality"
         :description="`${selected.name} · last 12 hours`"
       >
+        <div class="station-switcher">
+          <span>Switch station</span>
+          <div
+            class="station-tabs"
+            role="group"
+            aria-label="Switch station"
+          >
+            <n-button
+              v-for="station in stations"
+              :key="station.id"
+              class="station-tab"
+              :aria-pressed="station.id === selected.id"
+              @click="selectStation(station.id)"
+            >
+              <motion.span
+                v-if="station.id === selected.id"
+                class="station-tab-indicator"
+                layout-id="selected-station"
+                :transition="stateTransition"
+                aria-hidden="true"
+              />
+              <span>{{ station.name }}</span>
+            </n-button>
+          </div>
+        </div>
+
         <div class="chart-summary">
           <span>Current</span>
           <strong>{{ selected.signal }}%</strong>
@@ -325,9 +356,9 @@ onBeforeUnmount(() => clearTimeout(syncTimer));
           class="station-picker"
           v-model="query"
           v-model:selected="selectedStation"
-          label="Station"
+          label="Find another station"
           :items="stationOptions"
-          placeholder="Search stations"
+          placeholder="Search all stations"
           clearable
         />
 

@@ -31,6 +31,12 @@ Open the project directly in StackBlitz once the repository is pushed:
 https://stackblitz.com/github/nagi-labs/nagi-ui-deep-sea
 ```
 
+StackBlitz installs only the runtime and live-preview toolchain. Its
+`.stackblitzrc` disables the platform's full automatic install, performs a
+frozen production-only install, and then starts Vite directly. This omits
+Playwright, lint, formatting, and typecheck packages. Normal local and CI
+installs still include the complete verification toolchain.
+
 ## 90-second Nagi CSS tour
 
 1. Open [`src/views/DashboardView.vue`](src/views/DashboardView.vue). Its semantic

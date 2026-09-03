@@ -8,7 +8,8 @@ export interface ComboboxOption {
 </script>
 
 <script setup lang="ts">
-import { useId, type StyleValue } from "vue";
+import { motion, useReducedMotion } from "motion-v";
+import { computed, useId, type StyleValue } from "vue";
 
 import { useCombobox } from "@nagi-labs/nagi-ui";
 
@@ -53,6 +54,7 @@ const props = withDefaults(
     loading?: boolean;
     loadingText?: string;
     validationMessage?: string;
+    forceMotionPreview?: boolean;
   }>(),
   {
     autocomplete: "off",
@@ -65,6 +67,7 @@ const props = withDefaults(
     loading: false,
     loadingText: "Loading…",
     validationMessage: "Select an option.",
+    forceMotionPreview: false,
   },
 );
 const emit = defineEmits<{
@@ -81,7 +84,28 @@ const inputValue = defineModel<string>({ default: "" });
 const selected = defineModel<string | null>("selected", { default: null });
 const labelId = useId();
 const combobox = useCombobox(props, inputValue, selected);
-const { visibleItems } = combobox;
+const { activeKey, open, visibleItems } = combobox;
+const userPrefersReducedMotion = useReducedMotion();
+const reduceMotion = computed(
+  () => !props.forceMotionPreview && userPrefersReducedMotion.value,
+);
+const popupState = computed(() =>
+  open.value
+    ? { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
+    : reduceMotion.value
+      ? { opacity: 0 }
+      : { opacity: 0, y: -16, scale: 0.94, filter: "blur(10px)" },
+);
+const popupTransition = computed(() =>
+  reduceMotion.value
+    ? { duration: 0 }
+    : { type: "spring" as const, visualDuration: 0.42, bounce: 0.16 },
+);
+const indicatorTransition = computed(() =>
+  reduceMotion.value
+    ? { duration: 0 }
+    : { type: "spring" as const, visualDuration: 0.34, bounce: 0.2 },
+);
 </script>
 
 <template>
@@ -165,38 +189,54 @@ const { visibleItems } = combobox;
       :aria-busy="loading ? 'true' : undefined"
       v-bind="combobox.popupProps"
     >
-      <ul
-        class="list"
-        data-scope="combobox"
-        data-part="listbox"
-        :aria-labelledby="labelId"
-        v-bind="combobox.listboxProps"
+      <motion.div
+        class="seg -surface"
+        data-motion-combobox-surface
+        :initial="false"
+        :animate="popupState"
+        :transition="popupTransition"
       >
-        <li
-          v-for="item in visibleItems"
-          :key="item.key"
-          class="item"
+        <ul
+          class="list"
           data-scope="combobox"
-          data-part="option"
-          v-bind="combobox.optionProps(item)"
+          data-part="listbox"
+          :aria-labelledby="labelId"
+          v-bind="combobox.listboxProps"
         >
-          <span class="text">{{ item.label }}</span>
-        </li>
-      </ul>
-      <div
-        v-if="loading"
-        class="status"
-        role="status"
-      >
-        {{ loadingText }}
-      </div>
-      <div
-        v-else-if="visibleItems.length === 0"
-        class="status"
-        role="status"
-      >
-        {{ emptyText }}
-      </div>
+          <li
+            v-for="item in visibleItems"
+            :key="item.key"
+            class="item"
+            data-scope="combobox"
+            data-part="option"
+            v-bind="combobox.optionProps(item)"
+          >
+            <motion.span
+              v-if="activeKey === item.key"
+              class="fr -active-indicator"
+              data-motion-active-indicator
+              aria-hidden="true"
+              :layout-id="`${combobox.id}-active-indicator`"
+              :transition="indicatorTransition"
+            />
+            <span class="text">{{ item.label }}</span>
+          </li>
+        </ul>
+        <div
+          v-if="loading"
+          class="status"
+          role="status"
+        >
+          {{ loadingText }}
+        </div>
+        <div
+          v-else-if="visibleItems.length === 0"
+          class="status"
+          role="status"
+        >
+          {{ emptyText }}
+        </div>
+      </motion.div>
     </div>
   </div>
 </template>
@@ -272,77 +312,91 @@ const { visibleItems } = combobox;
     }
 
     &.-popup {
-      min-inline-size: 16rem;
-      max-block-size: 15rem;
       margin: 0;
-      padding: var(--nagi-space-surface-inset);
-      overflow-y: auto;
-      border: var(--n-border-width-1) solid var(--nagi-color-border-muted);
-      border-radius: var(--nagi-radius-overlay);
+      padding: 0;
+      overflow: visible;
+      border: 0;
       outline: none;
-      background: var(--nagi-color-surface);
-      box-shadow: var(--nagi-shadow-overlay);
-      color: var(--nagi-color-text);
-      list-style: none;
-      opacity: 0;
-      transform: translateY(-0.25rem) scale(0.99);
+      background: transparent;
       transform-origin: top;
-      transition:
-        opacity 0.12s,
-        transform 0.12s,
-        overlay 0.12s allow-discrete,
-        display 0.12s allow-discrete;
 
-      &:popover-open {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+      > .seg.-surface {
+        min-inline-size: 16rem;
+        max-block-size: 15rem;
+        padding: var(--nagi-space-surface-inset);
+        overflow-y: auto;
+        border: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+        border-radius: var(--nagi-radius-overlay);
+        background: var(--nagi-color-surface);
+        box-shadow: var(--nagi-shadow-overlay);
+        color: var(--nagi-color-text);
 
-        @starting-style {
-          opacity: 0;
-          transform: translateY(-0.25rem) scale(0.99);
+        > .list {
+          margin: 0;
+          padding: 0;
+          list-style: none;
+
+          > .item {
+            position: relative;
+            box-sizing: border-box;
+            min-block-size: var(--nagi-size-control);
+            padding: var(--nagi-space-item);
+            border-radius: var(--nagi-radius-item);
+            cursor: pointer;
+
+            &[aria-selected="true"] {
+              outline: 2px solid var(--nagi-color-focus-ring);
+              outline-offset: calc(-1 * var(--n-border-width-2));
+            }
+
+            > .fr.-active-indicator {
+              position: absolute;
+              inset: 0;
+              border: var(--n-border-width-1) solid
+                color-mix(in srgb, var(--nagi-color-accent) 52%, transparent);
+              border-radius: inherit;
+              background: color-mix(
+                in srgb,
+                var(--nagi-color-accent) 16%,
+                var(--nagi-color-surface-active)
+              );
+              box-shadow:
+                inset var(--n-border-width-2) 0 var(--nagi-color-accent),
+                0 0 var(--n-space-5)
+                  color-mix(in srgb, var(--nagi-color-accent) 12%, transparent);
+            }
+
+            > .text {
+              position: relative;
+            }
+
+            &[aria-disabled="true"] {
+              color: var(--nagi-color-text-disabled);
+              cursor: not-allowed;
+            }
+          }
         }
-      }
 
-      > .list {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-
-        > .item {
+        > .status {
           box-sizing: border-box;
           min-block-size: var(--nagi-size-control);
           padding: var(--nagi-space-item);
-          border-radius: var(--nagi-radius-item);
-          cursor: pointer;
-
-          &[aria-selected="true"] {
-            background: var(--nagi-color-surface-active);
-            outline: 2px solid var(--nagi-color-focus-ring);
-            outline-offset: calc(-1 * var(--n-border-width-2));
-          }
-
-          &[aria-disabled="true"] {
-            color: var(--nagi-color-text-disabled);
-            cursor: not-allowed;
-          }
+          color: var(--nagi-color-text-muted);
+          list-style: none;
         }
-      }
-
-      > .status {
-        box-sizing: border-box;
-        min-block-size: var(--nagi-size-control);
-        padding: var(--nagi-space-item);
-        color: var(--nagi-color-text-muted);
-        list-style: none;
       }
     }
   }
 }
 
 @media (forced-colors: active) {
-  .n-combobox > .unit.-control > .input:focus-visible {
-    outline: 2px solid Highlight;
-    outline-offset: var(--n-border-width-2);
+  .n-combobox {
+    > .unit.-control {
+      > .input:focus-visible {
+        outline: 2px solid Highlight;
+        outline-offset: var(--n-border-width-2);
+      }
+    }
   }
 }
 </style>

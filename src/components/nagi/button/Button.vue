@@ -73,7 +73,7 @@ const emit = defineEmits<{
   background: var(--_button-background, var(--nagi-color-surface));
   color: var(--_button-color, var(--_button-tone-color, var(--nagi-color-text)));
   font: inherit;
-  font-size: var(--_button-font-size, 1em);
+  font-size: var(--_button-font-size, var(--n-font-size-4));
   font-weight: 650;
   cursor: pointer;
 

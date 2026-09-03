@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AnimatePresence, motion, useReducedMotion } from "motion-v";
+import { AnimatePresence, motion } from "motion-v";
 import { RouterLink, RouterView } from "vue-router";
 
 import { NSidebar, NSidebarLink, NSidebarSection } from "./components/nagi";
@@ -9,30 +9,30 @@ const navigation = [
   { label: "Owned source", to: "/components" },
 ] as const;
 
-const reduceMotion = useReducedMotion();
+const appVersion = __DEEP_SEA_VERSION__;
 </script>
 
 <template>
   <div class="deep-sea-app">
     <n-sidebar
-      class="app-sidebar"
+      class="n-sidebar -app"
       label="Deep Sea operations"
     >
-      <a
-        class="identity"
-        href="#/"
+      <router-link
+        class="n-sidebar-content -identity"
+        to="/"
         aria-label="Deep Sea command deck"
       >
         <span
-          class="mark"
+          class="icon"
           aria-hidden="true"
           >DS</span
         >
-        <span class="wordmark">
-          <strong>Deep Sea</strong>
-          <small>Monitoring</small>
+        <span class="value">
+          <strong class="strong">Deep Sea</strong>
+          <small class="note">Monitoring · v{{ appVersion }}</small>
         </span>
-      </a>
+      </router-link>
 
       <n-sidebar-section label="Workspace">
         <router-link
@@ -43,57 +43,54 @@ const reduceMotion = useReducedMotion();
           custom
         >
           <n-sidebar-link
+            class="-app"
             :href="href"
             :current="isExactActive"
             :navigate="navigate"
           >
-            <motion.span
-              v-if="isExactActive"
-              class="nav-indicator"
-              layout-id="active-navigation"
-              :transition="
-                reduceMotion
-                  ? { duration: 0 }
-                  : { type: 'spring', visualDuration: 0.28, bounce: 0.1 }
-              "
-              aria-hidden="true"
-            />
             {{ item.label }}
           </n-sidebar-link>
         </router-link>
       </n-sidebar-section>
 
       <template #footer>
-        <div class="system-status">
+        <div class="n-sidebar-footer -system-status">
           <span
-            class="signal"
+            class="icon"
             aria-hidden="true"
           />
-          <span>
-            <strong>Network online</strong>
-            <small>18 stations reporting</small>
+          <span class="value">
+            <strong class="strong">Network online</strong>
+            <small class="note">18 stations reporting</small>
           </span>
         </div>
       </template>
     </n-sidebar>
 
-    <div class="app-frame">
-      <header class="mobile-header">
-        <a
-          class="identity"
-          href="#/"
+    <div class="unit -frame">
+      <header class="header -mobile">
+        <router-link
+          class="link -identity"
+          to="/"
         >
           <span
-            class="mark"
+            class="icon"
             aria-hidden="true"
             >DS</span
           >
-          <span class="wordmark"><strong>Deep Sea</strong></span>
-        </a>
-        <nav aria-label="Primary navigation">
+          <span class="value">
+            <strong class="strong">Deep Sea</strong>
+            <small class="note">v{{ appVersion }}</small>
+          </span>
+        </router-link>
+        <nav
+          class="nav"
+          aria-label="Primary navigation"
+        >
           <router-link
             v-for="item in navigation"
             :key="item.to"
+            class="link"
             :to="item.to"
           >
             {{ item.label }}
@@ -102,14 +99,17 @@ const reduceMotion = useReducedMotion();
       </header>
 
       <router-view v-slot="{ Component, route }">
-        <AnimatePresence mode="wait">
+        <AnimatePresence
+          mode="wait"
+          :initial="false"
+        >
           <motion.div
             :key="route.path"
-            class="route-view"
-            :initial="reduceMotion ? undefined : { opacity: 0, x: 8 }"
+            class="seg -route"
+            :initial="{ opacity: 0, x: 8 }"
             :animate="{ opacity: 1, x: 0 }"
             :exit="{ opacity: 0, x: -8 }"
-            :transition="{ duration: reduceMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }"
+            :transition="{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }"
           >
             <component :is="Component" />
           </motion.div>
@@ -118,3 +118,177 @@ const reduceMotion = useReducedMotion();
     </div>
   </div>
 </template>
+
+<style scoped>
+.deep-sea-app {
+  --local-brand-tracking: 0.04em;
+  --local-sidebar-width: 13.5rem;
+  --local-brand-size: 1.75rem;
+  --local-meta-tracking: 0.08em;
+
+  display: grid;
+  grid-template-columns: var(--local-sidebar-width) minmax(0, 1fr);
+  min-block-size: 100svb;
+
+  > .n-sidebar.-app {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--n-z-sticky);
+    block-size: 100svb;
+    padding: var(--n-space-8) var(--n-space-6);
+    border-color: var(--nagi-color-border-muted);
+    background: var(--deep-sea-depth);
+
+    .n-sidebar-content.-identity {
+      display: flex;
+      gap: var(--n-space-5);
+      align-items: center;
+      color: var(--nagi-color-text);
+      text-decoration: none;
+
+      > .icon {
+        display: grid;
+        flex: 0 0 auto;
+        place-items: center;
+        inline-size: var(--local-brand-size);
+        block-size: var(--local-brand-size);
+        border: var(--n-border-width-1) solid var(--nagi-color-border-strong);
+        border-radius: var(--n-radius-2);
+        background: var(--nagi-color-surface-raised);
+        color: var(--nagi-color-accent);
+        font-size: var(--n-font-size-1);
+        font-weight: 750;
+        letter-spacing: var(--local-brand-tracking);
+      }
+
+      > .value {
+        display: grid;
+        line-height: 1.15;
+
+        > .strong {
+          font-size: var(--n-font-size-4);
+          font-weight: 650;
+          letter-spacing: 0;
+        }
+
+        > .note {
+          margin-block-start: var(--n-space-1);
+          color: var(--nagi-color-text-muted);
+          font-size: var(--n-font-size-1);
+          letter-spacing: var(--local-meta-tracking);
+          text-transform: uppercase;
+        }
+      }
+    }
+
+    .n-sidebar-footer.-system-status {
+      display: flex;
+      gap: var(--n-space-4);
+      align-items: center;
+      padding: var(--n-space-5);
+      border-block-start: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+
+      > .icon {
+        inline-size: var(--n-space-3);
+        block-size: var(--n-space-3);
+        border-radius: 50%;
+        background: var(--nagi-color-success);
+      }
+
+      > .value {
+        display: grid;
+
+        > .strong {
+          color: var(--nagi-color-text);
+          font-size: var(--n-font-size-2);
+          font-weight: 600;
+        }
+
+        > .note {
+          color: var(--nagi-color-text-muted);
+          font-size: var(--n-font-size-1);
+        }
+      }
+    }
+  }
+
+  > .unit.-frame {
+    min-inline-size: 0;
+
+    > .header.-mobile {
+      display: none;
+    }
+
+    > .seg.-route {
+      display: grid;
+      min-inline-size: 0;
+      justify-items: center;
+    }
+  }
+}
+
+@media (max-width: 56rem) {
+  .deep-sea-app {
+    grid-template-columns: 1fr;
+
+    > .n-sidebar.-app {
+      display: none;
+    }
+
+    > .unit.-frame {
+      > .header.-mobile {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: var(--n-z-sticky);
+        display: flex;
+        gap: var(--n-space-8);
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--n-space-5) var(--n-space-8);
+        border-block-end: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+        background: var(--deep-sea-mobile-surface);
+        backdrop-filter: blur(12px);
+
+        > .link.-identity {
+          display: flex;
+          gap: var(--n-space-5);
+          align-items: center;
+          color: var(--nagi-color-text);
+          text-decoration: none;
+
+          > .icon {
+            display: grid;
+            place-items: center;
+            inline-size: var(--local-brand-size);
+            block-size: var(--local-brand-size);
+            border: var(--n-border-width-1) solid var(--nagi-color-border-strong);
+            border-radius: var(--n-radius-2);
+            background: var(--nagi-color-surface-raised);
+            color: var(--nagi-color-accent);
+            font-size: var(--n-font-size-1);
+            font-weight: 750;
+          }
+        }
+
+        > .nav {
+          display: flex;
+          gap: var(--n-space-2);
+
+          > .link {
+            padding: var(--n-space-3) var(--n-space-5);
+            border-radius: var(--n-radius-2);
+            color: var(--nagi-color-text-muted);
+            font-size: var(--n-font-size-2);
+            text-decoration: none;
+
+            &[aria-current="page"] {
+              background: var(--nagi-color-surface-raised);
+              color: var(--nagi-color-text);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+</style>

@@ -1,103 +1,25 @@
-export const verifiedDefinitions = new Set([
-  "AlertDialog",
-  "Button",
-  "Carousel",
-  "Combobox",
-  "DatePicker",
-  "Dialog",
-  "DropdownMenu",
-  "Listbox",
-  "Popover",
-]);
+export const verifiedDefinitions = new Set(["Button", "Carousel", "Dialog", "Toast"]);
 
 export const componentGroups = [
   {
     name: "Actions",
-    components: ["Button", "ButtonGroup", "Toggle", "ToggleGroup", "Toolbar"],
+    components: ["Button"],
   },
   {
     name: "Data display",
-    components: [
-      "Avatar",
-      "Badge",
-      "Card",
-      "Carousel",
-      "EmptyState",
-      "Kbd",
-      "Meter",
-      "Progress",
-      "Separator",
-      "Skeleton",
-      "Spinner",
-      "Table",
-    ],
-  },
-  {
-    name: "Date and time",
-    components: [
-      "Calendar",
-      "DateField",
-      "DatePicker",
-      "DateRangePicker",
-      "RangeCalendar",
-      "TimeField",
-    ],
+    components: ["Badge", "Card", "Carousel", "Meter", "Skeleton", "Table"],
   },
   {
     name: "Forms",
-    components: [
-      "Autocomplete",
-      "Checkbox",
-      "Combobox",
-      "Fieldset",
-      "FileInput",
-      "Input",
-      "InputGroup",
-      "Listbox",
-      "MultiSelect",
-      "NumberField",
-      "OTPField",
-      "Radio",
-      "RangeSlider",
-      "Rating",
-      "Select",
-      "Slider",
-      "Switch",
-      "TagsInput",
-      "Textarea",
-    ],
+    components: ["Combobox"],
   },
   {
     name: "Navigation",
-    components: [
-      "Accordion",
-      "Breadcrumb",
-      "Disclosure",
-      "Menubar",
-      "NavigationMenu",
-      "Pagination",
-      "Sidebar",
-      "SidebarLink",
-      "SidebarSection",
-      "Stepper",
-      "Tabs",
-      "Tree",
-    ],
+    components: ["Sidebar", "SidebarLink", "SidebarSection"],
   },
   {
     name: "Overlays and feedback",
-    components: [
-      "Alert",
-      "AlertDialog",
-      "ContextMenu",
-      "Dialog",
-      "DropdownMenu",
-      "Popover",
-      "PreviewCard",
-      "Resizable",
-      "Toast",
-      "Tooltip",
-    ],
+    components: ["Dialog", "Toast"],
   },
 ] as const;
 
@@ -105,3 +27,5 @@ export const ownedComponentCount = componentGroups.reduce(
   (total, group) => total + group.components.length,
   0,
 );
+
+export const ownedSourceFileCount = 17;

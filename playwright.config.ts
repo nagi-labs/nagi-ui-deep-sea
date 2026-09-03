@@ -14,7 +14,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "vp dev --host 127.0.0.1 --port 4173",
+    command: "vp run build && vp exec vite preview --host 127.0.0.1 --port 4173",
     port: 4173,
     reuseExistingServer: !process.env.CI,
   },

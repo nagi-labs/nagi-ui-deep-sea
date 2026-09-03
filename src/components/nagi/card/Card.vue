@@ -22,7 +22,7 @@ const attrs = useAttrs();
     >
       <div
         v-if="title || $slots.title"
-        class="title"
+        class="unit -heading"
       >
         <slot
           name="title"
@@ -65,7 +65,7 @@ const attrs = useAttrs();
   > .header {
     padding: var(--n-space-8) var(--n-space-8) 0;
 
-    > .title {
+    > .unit.-heading {
       margin: 0;
       font-size: var(--n-font-size-5);
     }

@@ -1,232 +1,140 @@
 // @nagi-source combobox/combobox.definition.ts@0.1.0
 import {
-  adoptRequirementSet,
   defineComponentDefinition,
-  nagiListboxRequirementsV1,
-  nagiPopupRequirementsV1,
-} from "@nagi-labs/nagi-ui";
+  defineComponentImplementation,
+} from "@nagi-labs/nagi-ui/definition";
+import { comboboxContract } from "@nagi-labs/nagi-ui/contracts/combobox";
 
-const popupListbox = adoptRequirementSet(nagiListboxRequirementsV1, {
-  prefix: "CMB-LBX",
-  profile: {
-    context: "combobox-popup",
-    selection: "single",
-  },
-  evidence: {
-    "SEM-01": ["packages/core/src/test/combobox-contract.ts", "tests/combobox.test.ts"],
-    "SEM-02": ["packages/core/src/test/combobox-contract.ts", "tests/combobox.test.ts"],
-    "STATE-01": ["packages/core/src/test/combobox-contract.ts", "tests/combobox.test.ts"],
-  },
-});
-
-const nativePopup = adoptRequirementSet(nagiPopupRequirementsV1, {
-  prefix: "CMB-POP",
-  profile: {
-    invocation: "behavior-imperative",
-    focus: "input-retained",
-    dismissal: "auto",
-  },
-  evidence: {
-    "SEM-01": ["packages/core/src/test/combobox-contract.ts", "tests/browser/combobox.spec.ts"],
-    "STATE-01": ["tests/browser/combobox.spec.ts"],
-    "INT-01": ["tests/browser/combobox.spec.ts"],
-  },
-});
-
-/** Observable guarantees owned with the editable Combobox Blueprint. */
-export const comboboxDefinition = defineComponentDefinition({
-  name: "Combobox",
-  version: "2.0",
-  status: "verified",
+export const motionComboboxImplementation = defineComponentImplementation({
+  id: "deep-sea/combobox-motion-popover",
+  title: "Deep Sea Motion Combobox",
+  version: "1",
+  strategy: "platform-first-with-delegated-entry-motion",
+  description:
+    "Deep Sea keeps the native input, auto popover, and aria-activedescendant focus model while Motion presents popup entry and the provisional active indicator.",
   references: [
     {
-      id: "apg-combobox",
-      title: "WAI-ARIA APG Combobox Pattern",
-      url: "https://www.w3.org/WAI/ARIA/apg/patterns/combobox/",
+      id: "motion-v-command-palette",
+      title: "Motion for Vue — Command palette",
+      url: "https://motion.dev/examples/vue-command-palette",
+      kind: "example",
+      revision: "public interaction and API summary reviewed 2026-09-03",
+      reviewedAt: "2026-09-03",
+    },
+    {
+      id: "motion-v-layout-animation",
+      title: "Motion for Vue — Layout animation",
+      url: "https://motion.dev/docs/vue-layout-animations",
       kind: "pattern",
-      revision: "Rolling guidance snapshot",
-      reviewedAt: "2026-09-01",
-    },
-    {
-      id: "wai-aria-1.2-active-descendant",
-      title: "WAI-ARIA 1.2 — aria-activedescendant",
-      url: "https://www.w3.org/TR/wai-aria-1.2/#aria-activedescendant",
-      kind: "standard",
-      revision: "1.2 Recommendation (2023-06-06)",
-      reviewedAt: "2026-09-01",
+      revision: "motion-v 2.4",
+      reviewedAt: "2026-09-03",
     },
   ],
-  adopts: [popupListbox, nativePopup],
-  semantics: [
+  decisions: [
     {
-      id: "CMB-SEM-01",
-      classification: "conformant",
-      source: "WAI-ARIA APG Combobox Pattern",
-      text: 'A labelled native text input exposes `role="combobox"` and `aria-autocomplete="list"`.',
-      evidence: ["packages/core/src/test/combobox-contract.ts", "tests/combobox.test.ts"],
-      origin: { kind: "reference", referenceIds: ["apg-combobox"] },
+      name: "layer",
+      value: "native-auto-popover",
+      description:
+        "The native auto popover remains the visibility, top-layer, and light-dismiss owner.",
+      evidence: ["src/components/nagi/combobox/Combobox.vue", "tests/combobox.spec.ts"],
     },
     {
-      id: "CMB-SEM-02",
-      classification: "conformant",
-      source: "WAI-ARIA APG Combobox Pattern and HTML Popover API",
-      text: "`aria-expanded` follows the native Popover state and `aria-controls` resolves to the component's listbox.",
-      evidence: [
-        "packages/core/src/test/combobox-contract.ts",
-        "tests/combobox.test.ts",
-        "tests/browser/shadow-root.spec.ts",
-      ],
-      origin: {
-        kind: "reference",
-        referenceIds: ["apg-combobox"],
-      },
+      name: "popup-motion",
+      value: "motion-spring-entry-native-immediate-dismissal",
+      description:
+        "Motion animates the already-mounted popup from its closed visual state when the native popover opens; native dismissal is deliberately not delayed for exit presence.",
+      evidence: ["src/components/nagi/combobox/Combobox.vue", "tests/combobox.spec.ts"],
     },
     {
-      id: "CMB-SEM-03",
-      classification: "conformant",
-      source: "WAI-ARIA APG Combobox Pattern",
-      text: "Disabled suggestions expose `aria-disabled` and cannot become the active or committed suggestion.",
-      evidence: ["packages/core/src/test/combobox-contract.ts", "tests/combobox.test.ts"],
-      origin: { kind: "reference", referenceIds: ["apg-combobox"] },
-    },
-    {
-      id: "CMB-SEM-04",
-      classification: "conformant",
-      source: "WAI-ARIA APG Managing Focus in Composites Using aria-activedescendant",
-      text: "While a suggestion is active, `aria-activedescendant` resolves to that option inside the controlled listbox; otherwise it is absent.",
-      evidence: [
-        "packages/core/src/test/combobox-contract.ts",
-        "tests/combobox.test.ts",
-        "tests/browser/shadow-root.spec.ts",
-        "tests/browser/definition-mutations.spec.ts",
-      ],
-      origin: {
-        kind: "reference",
-        referenceIds: ["apg-combobox", "wai-aria-1.2-active-descendant"],
-      },
-    },
-  ],
-  state: [
-    {
-      id: "CMB-STATE-01",
-      classification: "intentional-extension",
-      source: "Nagi provisional-selection policy",
-      text: "Editable text, provisional active suggestion, and committed selection are distinct states; filtering and navigation do not commit.",
-      evidence: ["packages/core/src/test/combobox-contract.ts", "tests/combobox.test.ts"],
-      origin: { kind: "nagi", policy: "provisional-selection", policyVersion: "1" },
-    },
-    {
-      id: "CMB-STATE-02",
-      classification: "conformant",
-      source: "WAI-ARIA valid IDREF requirement and Nagi dynamic-collection policy",
-      text: "Removing the active option clears its active reference, while filtering does not prune the committed selection.",
-      evidence: [
-        "packages/core/src/test/combobox-contract.ts",
-        "tests/combobox.test.ts",
-        "tests/browser/definition-mutations.spec.ts",
-      ],
-      origin: { kind: "nagi", policy: "dynamic-collection-repair", policyVersion: "1" },
-    },
-    {
-      id: "CMB-STATE-03",
-      classification: "conformant",
-      source: "HTML disabled/read-only semantics and Nagi read-only inspection policy",
-      text: "Native disabled blocks interaction; read-only options remain inspectable but editing, clearing, and committing are blocked.",
-      evidence: ["tests/combobox.test.ts"],
-      origin: { kind: "nagi", policy: "read-only-inspection", policyVersion: "1" },
-    },
-  ],
-  interaction: [
-    {
-      id: "CMB-INT-01",
-      classification: "conformant",
-      source: "WAI-ARIA APG Combobox Pattern",
-      text: "Typing filters and opens suggestions without intercepting standard single-line text editing or IME input.",
-      evidence: ["packages/core/src/test/combobox-contract.ts", "tests/combobox.test.ts"],
-      origin: { kind: "nagi", policy: "browser-owned-text-editing", policyVersion: "1" },
-    },
-    {
-      id: "CMB-INT-02",
-      classification: "conformant",
-      source: "WAI-ARIA APG Combobox Pattern",
-      text: "Arrow keys move provisional activity through enabled options with declared boundary and optional loop behavior.",
-      evidence: ["packages/core/src/test/combobox-contract.ts", "tests/combobox.test.ts"],
-      origin: { kind: "nagi", policy: "provisional-arrow-navigation", policyVersion: "1" },
-    },
-    {
-      id: "CMB-INT-03",
-      classification: "conformant",
-      source: "WAI-ARIA APG Combobox Pattern",
-      text: "Enter and pointer activation commit a suggestion; Escape dismisses without committing provisional navigation.",
-      evidence: ["packages/core/src/test/combobox-contract.ts", "tests/combobox.test.ts"],
-      origin: { kind: "nagi", policy: "manual-selection-commit", policyVersion: "1" },
-    },
-    {
-      id: "CMB-INT-04",
-      classification: "intentional-extension",
-      source: "Nagi native-layer policy",
-      text: "Suggestions use native Popover and browser-owned light dismissal without Teleport or a document-global rediscovery step.",
-      evidence: ["packages/core/src/test/combobox-contract.ts"],
-      origin: { kind: "nagi", policy: "native-popover-layer", policyVersion: "1" },
-    },
-  ],
-  focus: [
-    {
-      id: "CMB-FOCUS-01",
-      classification: "conformant",
-      source: "WAI-ARIA APG Combobox Pattern",
-      text: "DOM focus remains on the input while `aria-activedescendant` identifies the active option; pointer selection does not first move focus into the popup.",
-      evidence: [
-        "packages/core/src/test/combobox-contract.ts",
-        "tests/combobox.test.ts",
-        "tests/browser/definition-mutations.spec.ts",
-      ],
-      origin: { kind: "nagi", policy: "input-owned-active-descendant-focus", policyVersion: "1" },
+      name: "active-indicator",
+      value: "scoped-shared-layout-id",
+      description:
+        "One decorative indicator follows provisional activity by a Combobox-scoped layoutId without replacing aria-activedescendant.",
+      evidence: ["src/components/nagi/combobox/Combobox.vue", "tests/combobox.spec.ts"],
     },
   ],
   anatomy: [
     {
-      id: "CMB-ANAT-01",
-      evidence: ["packages/core/src/test/combobox-contract.ts", "tests/definition.test.ts"],
+      id: "DEEP_SEA_COMBOBOX_IMPLEMENTATION_01",
+      evidence: ["tests/combobox.spec.ts"],
       name: "root",
-      description:
-        "The owned Combobox scope. It bounds relationship lookup without prescribing a CSS class.",
+      description: "The owned Combobox scope.",
       match: { by: "part", scope: "combobox", part: "root" },
     },
     {
       name: "input",
-      description: "The native editable input receiving the complete inputProps bundle.",
+      description: "The native editable input and DOM focus owner.",
       match: { by: "part", scope: "combobox", part: "input" },
       within: "root",
+      contractPart: "input",
     },
     {
       name: "popup",
-      description: "The native Popover that owns suggestion visibility.",
+      description: "The native auto popover that owns visibility and light dismissal.",
       match: { by: "part", scope: "combobox", part: "popup" },
       within: "root",
+      contractPart: "popup",
     },
     {
-      name: "listbox",
-      description: "The controlled listbox receiving the complete listboxProps bundle.",
-      match: { by: "part", scope: "combobox", part: "listbox" },
+      name: "motion-surface",
+      description: "The presentational surface receiving Motion entry styles.",
+      match: { by: "marker", attribute: "data-motion-combobox-surface" },
       within: "popup",
     },
     {
+      name: "listbox",
+      description: "The single-selection suggestion collection.",
+      match: { by: "part", scope: "combobox", part: "listbox" },
+      within: "motion-surface",
+      contractPart: "listbox",
+    },
+    {
       name: "option",
-      description: "A repeated suggestion whose stable ID can be referenced by the focused input.",
+      description: "A keyed suggestion that may become provisionally active.",
       match: { by: "part", scope: "combobox", part: "option" },
       within: "listbox",
       multiple: true,
+      contractPart: "option",
+    },
+    {
+      name: "active-indicator",
+      description:
+        "An optional decorative shared-layout indicator for the active suggestion.",
+      match: { by: "marker", attribute: "data-motion-active-indicator" },
+      within: "option",
+      required: false,
+    },
+  ],
+  interaction: [
+    {
+      id: "DEEP_SEA_COMBOBOX_IMPLEMENTATION_02",
+      classification: "implementation-constraint",
+      source: "Deep Sea native-popover Motion entry policy",
+      text: "Opening suggestions runs a non-zero spring entry while DOM focus remains on the input; Escape retains native immediate dismissal.",
+      evidence: ["tests/combobox.spec.ts"],
+      origin: { kind: "nagi", policy: "deep-sea-combobox-popup-entry", policyVersion: "1" },
     },
   ],
   style: [
     {
-      id: "CMB-STYLE-01",
-      classification: "intentional-extension",
-      source: "Nagi functional-state and forced-colors policy",
-      text: "Open popup, active option, disabled option, and forced-colors input focus remain visibly distinguishable.",
-      evidence: ["packages/core/src/test/combobox-contract.ts"],
-      origin: { kind: "nagi", policy: "functional-state-visibility", policyVersion: "1" },
+      id: "DEEP_SEA_COMBOBOX_IMPLEMENTATION_03",
+      classification: "implementation-constraint",
+      source: "Deep Sea provisional active-indicator policy",
+      text: "A spring layout indicator moves between enabled active suggestions while semantic activity remains expressed by aria-activedescendant and aria-selected.",
+      evidence: ["tests/combobox.spec.ts"],
+      origin: {
+        kind: "nagi",
+        policy: "deep-sea-combobox-active-indicator",
+        policyVersion: "1",
+      },
     },
   ],
+});
+
+export const comboboxDefinition = defineComponentDefinition({
+  name: "Combobox",
+  version: "3.0-deep-sea.1",
+  status: "draft",
+  contract: comboboxContract,
+  implementation: motionComboboxImplementation,
 });

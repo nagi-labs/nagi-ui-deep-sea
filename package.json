@@ -1,22 +1,22 @@
 {
   "name": "nagi-ui-deep-sea",
-  "version": "0.0.0",
+  "version": "0.1.0-motion.22",
   "private": true,
   "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "build": "vue-tsc -b && vite build && vite build --ssr src/entry-server.ts --outDir .ssr && node scripts/prerender.mjs",
     "preview": "vite preview",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
-    "lint": "oxlint src tests scripts vite.config.ts playwright.config.ts",
+    "lint": "oxlint src tests scripts vite.config.ts playwright.config.ts eslint.config.mjs && eslint 'src/**/*.vue'",
     "typecheck": "vue-tsc -b",
     "audit:owned": "node scripts/audit-owned-sources.mjs",
     "test:browser": "playwright test"
   },
   "dependencies": {
-    "@nagi-labs/nagi-ui": "0.1.0",
+    "@nagi-labs/nagi-ui": "file:.local-packages/nagi-labs-nagi-ui-0.1.1.tgz",
     "@unovis/ts": "^1.6.7",
     "@unovis/vue": "^1.6.7",
     "motion-v": "^2.4.0",
@@ -25,15 +25,21 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@nagi-labs/eslint-plugin-nagi-css": "^0.3.0",
     "@playwright/test": "^1.62.1",
     "@types/node": "^24.13.3",
+    "@typescript-eslint/parser": "^8.68.0",
     "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/server-renderer": "^3.5.42",
     "@vue/tsconfig": "^0.9.1",
+    "eslint": "^10.9.1",
+    "eslint-plugin-vue": "^10.10.0",
     "oxfmt": "^0.65.0",
     "oxlint": "^1.80.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
     "vite-plus": "^0.3.0",
+    "vue-eslint-parser": "^10.4.1",
     "vue-tsc": "^3.3.11"
   },
   "devEngines": {

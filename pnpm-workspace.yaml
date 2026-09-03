@@ -1,4 +1,6 @@
 allowBuilds:
   maplibre-gl: false
 minimumReleaseAgeExclude:
-  - "@nagi-labs/nagi-ui@0.1.0"
+  - "@nagi-labs/nagi-ui@0.1.1"
+  - "@nagi-labs/eslint-plugin-nagi-css@0.3.0"
+  - "@nagi-labs/nagi-css-core@0.3.0"

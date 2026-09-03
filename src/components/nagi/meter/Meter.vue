@@ -1,6 +1,7 @@
 <!-- @nagi-source meter/Meter.vue@0.1.0 -->
 <script setup lang="ts">
-import { computed, useAttrs, useId } from "vue";
+import { motion } from "motion-v";
+import { computed, onBeforeUnmount, onMounted, ref, useAttrs, useId } from "vue";
 
 import { mergeElementProps } from "@nagi-labs/nagi-ui";
 
@@ -15,6 +16,7 @@ const {
   low,
   high,
   optimum,
+  motionActive = true,
 } = defineProps<{
   label: string;
   id?: string;
@@ -24,11 +26,29 @@ const {
   low?: number;
   high?: number;
   optimum?: number;
+  motionActive?: boolean;
 }>();
 
 const attrs = useAttrs();
 const generatedId = useId();
 const labelId = `${generatedId}-label`;
+const normalizedValue = computed(() => {
+  const range = max - min;
+  if (range <= 0) return 0;
+  return Math.min(1, Math.max(0, (value - min) / range));
+});
+const formattedValue = computed(() => `${Math.round(normalizedValue.value * 100)}%`);
+const motionReady = ref(false);
+const visualScale = computed(() =>
+  motionReady.value && motionActive ? normalizedValue.value : 0,
+);
+let motionFrame: number | undefined;
+const meterTransition = {
+  type: "spring" as const,
+  stiffness: 210,
+  damping: 28,
+  mass: 0.8,
+};
 const meterProps = computed(() =>
   mergeElementProps({ "aria-labelledby": labelId }, attrs, {
     id: id ?? generatedId,
@@ -40,18 +60,53 @@ const meterProps = computed(() =>
     optimum,
   }),
 );
+
+onMounted(() => {
+  motionFrame = requestAnimationFrame(() => {
+    motionReady.value = true;
+  });
+});
+
+onBeforeUnmount(() => {
+  if (motionFrame !== undefined) cancelAnimationFrame(motionFrame);
+});
 </script>
 
 <template>
-  <div class="n-meter">
-    <label
-      :id="labelId"
-      class="label"
-      :for="id ?? generatedId"
-      >{{ label }}</label
+  <div
+    class="n-meter"
+    data-scope="meter"
+    data-part="root"
+  >
+    <div class="unit -heading">
+      <label
+        :id="labelId"
+        class="label"
+        :for="id ?? generatedId"
+        >{{ label }}</label
+      >
+      <span
+        class="value"
+        aria-hidden="true"
+        >{{ formattedValue }}</span
+      >
+    </div>
+    <div
+      class="unit -gauge"
+      data-part="track"
+      aria-hidden="true"
     >
+      <motion.span
+        class="seg -fill"
+        data-part="indicator"
+        :initial="false"
+        :animate="{ scaleX: visualScale }"
+        :transition="meterTransition"
+      />
+    </div>
     <meter
-      class="meter"
+      class="meter -native"
+      data-part="control"
       v-bind="meterProps"
     >
       {{ value }} / {{ max }}
@@ -66,16 +121,51 @@ const meterProps = computed(() =>
   color: var(--nagi-color-text);
   font: inherit;
 
-  > .label {
-    color: var(--nagi-color-text-muted);
-    font-size: var(--nagi-font-size-label);
-    font-weight: 650;
+  > .unit.-heading {
+    display: flex;
+    gap: var(--n-space-5);
+    align-items: baseline;
+    justify-content: space-between;
+
+    > .label,
+    > .value {
+      font-size: var(--nagi-font-size-label);
+    }
+
+    > .label {
+      color: var(--nagi-color-text-muted);
+      font-weight: 650;
+    }
+
+    > .value {
+      color: var(--nagi-color-text);
+      font-variant-numeric: tabular-nums;
+    }
   }
 
-  > .meter {
-    inline-size: 100%;
-    block-size: 0.65rem;
-    accent-color: var(--nagi-color-accent);
+  > .unit.-gauge {
+    block-size: 0.4rem;
+    overflow: hidden;
+    border-radius: var(--n-radius-3);
+    background: var(--nagi-color-border-muted);
+
+    > .seg.-fill {
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
+      border-radius: inherit;
+      background: var(--nagi-color-accent);
+      transform-origin: left center;
+    }
+  }
+
+  > .meter.-native {
+    position: fixed;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 </style>

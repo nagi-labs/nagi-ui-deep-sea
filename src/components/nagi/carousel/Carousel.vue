@@ -10,7 +10,9 @@ export interface CarouselItem {
 </script>
 
 <script setup lang="ts">
-import type { StyleValue } from "vue";
+import { AnimatePresence, motion, useReducedMotion } from "motion-v";
+import { computed, ref, watch, type StyleValue } from "vue";
+
 import { useCarousel } from "@nagi-labs/nagi-ui";
 
 defineOptions({ inheritAttrs: false });
@@ -23,9 +25,7 @@ const props = withDefaults(
     style?: StyleValue;
     title?: string;
     label: string;
-    slidesLabel?: string;
     carouselRoleDescription?: string;
-    slidesRoleDescription?: string;
     slideRoleDescription?: string;
     landmark?: boolean;
     previousLabel?: string;
@@ -34,21 +34,90 @@ const props = withDefaults(
     formatSlideLabel?: (item: CarouselItem, position: number, count: number) => string;
     loop?: boolean;
     disabled?: boolean;
+    forceMotionPreview?: boolean;
   }>(),
   {
     landmark: false,
     carouselRoleDescription: "carousel",
-    slidesRoleDescription: "slides",
     slideRoleDescription: "slide",
     previousLabel: "Previous slide",
     nextLabel: "Next slide",
     loop: false,
     disabled: false,
+    forceMotionPreview: false,
   },
 );
 
 const index = defineModel<number>({ default: 0 });
-const carousel = useCarousel(props, index);
+const carousel = useCarousel({
+  items: () => props.items,
+  index,
+  label: () => props.label,
+  carouselRoleDescription: () => props.carouselRoleDescription,
+  slideRoleDescription: () => props.slideRoleDescription,
+  landmark: () => props.landmark,
+  previousLabel: () => props.previousLabel,
+  nextLabel: () => props.nextLabel,
+  formatAnnouncement: props.formatAnnouncement,
+  formatSlideLabel: props.formatSlideLabel,
+  loop: () => props.loop,
+  disabled: () => props.disabled,
+  id: props.id,
+});
+const userPrefersReducedMotion = useReducedMotion();
+const reduceMotion = computed(
+  () => !props.forceMotionPreview && userPrefersReducedMotion.value,
+);
+const currentSlide = computed(() => {
+  const itemIndex = carousel.currentIndex.value;
+  const item = props.items[itemIndex];
+  return item ? { item, itemIndex } : null;
+});
+const transitionDirection = ref<1 | -1>(1);
+let previousAcceptedIndex = carousel.currentIndex.value;
+
+function resolveSlideDirection(value: unknown): 1 | -1 {
+  return value === -1 ? -1 : 1;
+}
+
+watch(carousel.currentIndex, (nextIndex) => {
+  const lastIndex = props.items.length - 1;
+  if (props.loop && previousAcceptedIndex === 0 && nextIndex === lastIndex) {
+    transitionDirection.value = -1;
+  } else if (props.loop && previousAcceptedIndex === lastIndex && nextIndex === 0) {
+    transitionDirection.value = 1;
+  } else {
+    transitionDirection.value = nextIndex >= previousAcceptedIndex ? 1 : -1;
+  }
+  previousAcceptedIndex = nextIndex;
+});
+
+const slideVariants = {
+  enter(custom: unknown) {
+    const direction = resolveSlideDirection(custom);
+    return reduceMotion.value
+      ? { opacity: 1, transform: "none" }
+      : {
+          opacity: 0,
+          transform: `translateX(${direction * 64}px) scale(0.98)`,
+        };
+  },
+  active: { opacity: 1, transform: "translateX(0) scale(1)" },
+  exit(custom: unknown) {
+    const direction = resolveSlideDirection(custom);
+    return reduceMotion.value
+      ? { opacity: 1, transform: "none" }
+      : {
+          opacity: 0,
+          transform: `translateX(${direction * -64}px) scale(0.98)`,
+        };
+  },
+};
+const slideTransition = computed(() =>
+  reduceMotion.value
+    ? { duration: 0 }
+    : { duration: 0.32, ease: [0.4, 0, 0.2, 1] as const },
+);
 </script>
 
 <template>
@@ -83,42 +152,54 @@ const carousel = useCarousel(props, index);
         ›
       </button>
     </div>
+
     <div
-      v-bind="carousel.viewportProps"
-      data-scope="carousel"
-      data-part="viewport"
-      class="unit -viewport"
+      class="unit -presence"
+      :data-motion-policy="reduceMotion ? 'reduced' : 'animated'"
     >
-      <div class="seg -slides">
-        <article
-          v-for="(item, itemIndex) in items"
-          :key="item.key"
-          v-bind="carousel.slideProps(item, itemIndex)"
+      <AnimatePresence
+        mode="sync"
+        :initial="false"
+        :custom="transitionDirection"
+      >
+        <motion.article
+          v-if="currentSlide"
+          :key="currentSlide.item.key"
+          v-bind="carousel.slideProps(currentSlide.item, currentSlide.itemIndex)"
           data-scope="carousel"
           data-part="slide"
+          data-motion-slide=""
           class="article -slide"
+          :custom="transitionDirection"
+          :variants="slideVariants"
+          initial="enter"
+          animate="active"
+          exit="exit"
+          :transition="slideTransition"
         >
           <img
-            v-if="item.imageSrc"
+            v-if="currentSlide.item.imageSrc"
             class="image"
-            :src="item.imageSrc"
-            :alt="item.imageAlt ?? ''"
+            :src="currentSlide.item.imageSrc"
+            :alt="currentSlide.item.imageAlt ?? ''"
           />
           <h2
-            v-bind="carousel.slideLabelProps(itemIndex)"
+            v-bind="carousel.slideLabelProps(currentSlide.itemIndex)"
             class="title"
           >
-            {{ item.label }}
-            <span class="text -position">, {{ carousel.slidePosition(item, itemIndex) }}</span>
+            {{ currentSlide.item.label }}
+            <span class="text -position">
+              , {{ carousel.slidePosition(currentSlide.item, currentSlide.itemIndex) }}
+            </span>
           </h2>
           <p
-            v-if="item.description"
-            class="text -description"
+            v-if="currentSlide.item.description"
+            class="p -description"
           >
-            {{ item.description }}
+            {{ currentSlide.item.description }}
           </p>
-        </article>
-      </div>
+        </motion.article>
+      </AnimatePresence>
     </div>
   </section>
 </template>
@@ -144,10 +225,12 @@ const carousel = useCarousel(props, index);
       color: inherit;
       font: inherit;
       cursor: pointer;
+
       &:focus-visible {
         outline: none;
         box-shadow: var(--nagi-shadow-focus);
       }
+
       &:disabled,
       &[aria-disabled="true"] {
         color: var(--nagi-color-text-disabled);
@@ -161,29 +244,20 @@ const carousel = useCarousel(props, index);
     }
   }
 
-  > .unit.-viewport {
-    overflow: auto;
-    scroll-snap-type: inline mandatory;
-    scroll-behavior: smooth;
-    scrollbar-color: var(--nagi-color-border) var(--nagi-color-surface);
-    &:focus-visible {
-      outline: none;
-      box-shadow: var(--nagi-shadow-focus);
-    }
+  > .unit.-presence {
+    position: relative;
+    display: grid;
+    overflow: clip;
 
-    > .seg.-slides {
-      display: flex;
-      inline-size: 100%;
-    }
-
-    .article.-slide {
+    > .article.-slide {
       box-sizing: border-box;
-      flex: 0 0 100%;
+      grid-area: 1 / 1;
+      min-inline-size: 0;
+      inline-size: 100%;
       padding: var(--nagi-space-surface-inset);
       border: var(--n-border-width-1) solid var(--nagi-color-border);
       border-radius: var(--nagi-radius-item);
       background: var(--nagi-color-surface);
-      scroll-snap-align: start;
 
       > .image {
         display: block;
@@ -191,6 +265,7 @@ const carousel = useCarousel(props, index);
         block-size: auto;
         border-radius: var(--nagi-radius-item);
       }
+
       > .title {
         margin: 0;
         font-size: inherit;
@@ -205,27 +280,22 @@ const carousel = useCarousel(props, index);
           white-space: nowrap;
         }
       }
-      > .text.-description {
+
+      > .p.-description {
         margin-block: var(--nagi-space-item-gap) 0;
         color: var(--nagi-color-text-muted);
       }
     }
   }
-
-  &[data-disabled] > .unit.-viewport {
-    overflow: hidden;
-  }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .n-carousel > .unit.-viewport {
-    scroll-behavior: auto;
-  }
-}
 @media (forced-colors: active) {
-  .n-carousel > .actions > .button:focus-visible,
-  .n-carousel > .unit.-viewport:focus-visible {
-    outline: 2px solid Highlight;
+  .n-carousel {
+    > .actions {
+      > .button:focus-visible {
+        outline: 2px solid Highlight;
+      }
+    }
   }
 }
 </style>

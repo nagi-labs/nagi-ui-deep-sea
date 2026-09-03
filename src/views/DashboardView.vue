@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { VisArea, VisAxis, VisLine, VisXYContainer } from "@unovis/vue";
-import { AnimatePresence, motion, useReducedMotion } from "motion-v";
-import { computed, onBeforeUnmount, ref } from "vue";
+import { motion } from "motion-v";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
-import { NBadge, NButton, NCard, NCombobox, NDialog, NProgress, NTable } from "../components/nagi";
+import { createToastManager } from "@nagi-labs/nagi-ui";
+
+import { NBadge, NButton, NCombobox, NDialog, NMeter, NTable, NToast } from "../components/nagi";
+import DashboardSkeleton from "../components/DashboardSkeleton.vue";
+import SignalQualityCard from "../components/SignalQualityCard.vue";
 import {
   signalTimeline,
   stationColumns,
@@ -12,58 +15,40 @@ import {
   type StationStatus,
 } from "../data/stations";
 
-const reduceMotion = useReducedMotion();
 const query = ref("");
 const selectedStation = ref<string | null>("kermadec-07");
 const dialogOpen = ref(false);
 const syncing = ref(false);
+const syncMotionRevision = ref(0);
 const lastSync = ref("04:18 UTC");
+const minimumSkeletonElapsed = ref(false);
+const chartRendered = ref(false);
+const toastManager = createToastManager({ duration: 5000, limit: 3 });
 let syncTimer: ReturnType<typeof setTimeout> | undefined;
+let skeletonTimer: ReturnType<typeof setTimeout> | undefined;
+
+const minimumSkeletonDuration = 700;
 
 const selected = computed(
   () => stations.find((station) => station.id === selectedStation.value) ?? stations[0],
 );
-
-interface SignalSample {
-  index: number;
-  value: number;
-}
-
-const chartData = computed<SignalSample[]>(() =>
-  selected.value.signalHistory.map((value, index) => ({ index, value })),
-);
-const sampleIndex = (sample: SignalSample) => sample.index;
-const signalValue = (sample: SignalSample) => sample.value;
-const formatTimeline = (value: number | Date) =>
-  typeof value === "number" ? (signalTimeline[Math.round(value)] ?? "") : "";
-const formatSignal = (value: number | Date) =>
-  typeof value === "number" ? String(Math.round(value)) : "";
-
-const enterTransition = computed(() => ({
-  duration: reduceMotion.value ? 0 : 0.44,
-  ease: [0.22, 1, 0.36, 1] as const,
-}));
-
-const stateTransition = computed(() =>
-  reduceMotion.value
-    ? { duration: 0 }
-    : { type: "spring" as const, visualDuration: 0.56, bounce: 0.16 },
-);
-
-const chartDuration = computed(() => (reduceMotion.value ? 0 : 820));
+const pageReady = computed(() => minimumSkeletonElapsed.value && chartRendered.value);
 
 function syncNetwork() {
   if (syncing.value) return;
 
   syncing.value = true;
+  syncMotionRevision.value += 1;
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(
-    () => {
-      syncing.value = false;
-      lastSync.value = "just now";
-    },
-    reduceMotion.value ? 0 : 720,
-  );
+  syncTimer = setTimeout(() => {
+    syncing.value = false;
+    lastSync.value = "just now";
+    toastManager.add({
+      title: "Network synchronized",
+      description: "All 18 station feeds are current.",
+      tone: "success",
+    });
+  }, 720);
 }
 
 function selectStation(stationId: string) {
@@ -77,334 +62,564 @@ function badgeTone(status: StationStatus) {
   return "accent";
 }
 
-onBeforeUnmount(() => clearTimeout(syncTimer));
+onBeforeUnmount(() => {
+  clearTimeout(syncTimer);
+  clearTimeout(skeletonTimer);
+  toastManager.dispose();
+});
+
+onMounted(() => {
+  skeletonTimer = setTimeout(() => {
+    minimumSkeletonElapsed.value = true;
+  }, minimumSkeletonDuration);
+});
 </script>
 
 <template>
-  <main class="dashboard-view">
-    <header class="page-heading">
-      <div class="heading-copy">
-        <p class="eyebrow">Pacific monitoring network</p>
-        <h1>Network overview</h1>
-        <p class="lede">Station health, signal quality, and scheduled transfers.</p>
-      </div>
-      <div class="actions">
-        <n-button
-          class="sync-button"
-          :disabled="syncing"
-          @click="syncNetwork"
-        >
-          <motion.span
-            class="sync-icon"
-            aria-hidden="true"
-            :animate="{ rotate: syncing ? 360 : 0 }"
-            :transition="{ duration: reduceMotion ? 0 : 0.62, ease: 'easeInOut' }"
-          >
-            ↻
-          </motion.span>
-          {{ syncing ? "Syncing" : "Sync data" }}
-        </n-button>
-        <n-dialog
-          class="report-dialog"
-          v-model:open="dialogOpen"
-          trigger-label="Create report"
-          title="Create network report"
-          description="Export the current operational snapshot for the handover log."
-        >
-          <p class="dialog-copy">
-            The report includes station status, the selected signal history, and the latest
-            telemetry received by this browser session.
-          </p>
-          <template #actions>
-            <n-button class="confirm-report">Export report</n-button>
-          </template>
-        </n-dialog>
-      </div>
-    </header>
-
-    <motion.section
-      class="metric-grid"
-      aria-label="Network summary"
-      :initial="reduceMotion ? undefined : { opacity: 0, y: 8 }"
-      :animate="{ opacity: 1, y: 0 }"
-      :transition="enterTransition"
+  <div
+    class="deep-sea-dashboard-view"
+    :aria-busy="!pageReady"
+  >
+    <main
+      class="main"
+      data-motion-policy="selective"
+      :data-ready="pageReady"
+      :aria-hidden="pageReady ? undefined : 'true'"
     >
-      <motion.article
-        class="metric"
-        layout
-        :while-hover="reduceMotion ? undefined : { y: -2 }"
-        :transition="stateTransition"
-      >
-        <span class="label">Stations online</span>
-        <strong>18 / 18</strong>
-        <span class="change -positive">All reporting</span>
-      </motion.article>
-      <motion.article
-        class="metric"
-        layout
-        :while-hover="reduceMotion ? undefined : { y: -2 }"
-        :transition="stateTransition"
-      >
-        <span class="label">Selected signal</span>
-        <AnimatePresence mode="wait">
-          <motion.strong
-            :key="selected.id"
-            :initial="reduceMotion ? undefined : { opacity: 0, y: 6 }"
-            :animate="{ opacity: 1, y: 0 }"
-            :exit="{ opacity: 0, y: -6 }"
-            :transition="enterTransition"
-          >
-            {{ selected.signal }}%
-          </motion.strong>
-        </AnimatePresence>
-        <span class="change">{{ selected.name }}</span>
-      </motion.article>
-      <motion.article
-        class="metric"
-        layout
-        :while-hover="reduceMotion ? undefined : { y: -2 }"
-        :transition="stateTransition"
-      >
-        <span class="label">Network availability</span>
-        <strong>99.98%</strong>
-        <span class="change">30-day window</span>
-      </motion.article>
-      <motion.article
-        class="metric"
-        layout
-        :while-hover="reduceMotion ? undefined : { y: -2 }"
-        :transition="stateTransition"
-      >
-        <span class="label">Next transfer</span>
-        <strong>42 min</strong>
-        <span class="change">Sandwich 04</span>
-      </motion.article>
-    </motion.section>
-
-    <section class="operations-grid">
-      <n-card
-        class="signal-card"
-        title="Signal quality"
-        :description="`${selected.name} · last 12 hours`"
-      >
-        <div class="station-switcher">
-          <span>Switch station</span>
-          <div
-            class="station-tabs"
-            role="group"
-            aria-label="Switch station"
-          >
-            <n-button
-              v-for="station in stations"
-              :key="station.id"
-              class="station-tab"
-              :aria-pressed="station.id === selected.id"
-              @click="selectStation(station.id)"
-            >
-              <motion.span
-                v-if="station.id === selected.id"
-                class="station-tab-indicator"
-                layout-id="selected-station"
-                :transition="stateTransition"
-                aria-hidden="true"
-              />
-              <span>{{ station.name }}</span>
-            </n-button>
-          </div>
+      <header class="header -page">
+        <div class="unit -heading">
+          <p class="p -eyebrow">Pacific monitoring network</p>
+          <h1 class="title">Network overview</h1>
+          <p class="p -lede">Station health, signal quality, and scheduled transfers.</p>
         </div>
-
-        <div class="chart-summary">
-          <span>Current</span>
-          <strong>{{ selected.signal }}%</strong>
-          <span :class="['trend', selected.signal >= 80 ? '-positive' : '-attention']">
-            {{ selected.signal >= 80 ? "Stable" : "Needs review" }}
-          </span>
-        </div>
-
-        <figure
-          class="signal-chart"
-          data-nagi-unovis
-        >
-          <VisXYContainer
-            class="unovis-xy-container"
-            :data="chartData"
-            :height="224"
-            :y-domain="[50, 100]"
-            :aria-label="`${selected.name} signal quality over the last 12 hours, ending at ${selected.signal} percent`"
+        <div class="actions">
+          <n-button
+            class="n-button -sync"
+            :disabled="syncing"
+            @click="syncNetwork"
           >
-            <VisArea
-              class="unovis-area"
-              :x="sampleIndex"
-              :y="signalValue"
-              :baseline="50"
-              color="var(--vis-color0)"
-              :opacity="0.08"
-              :duration="chartDuration"
-            />
-            <VisLine
-              class="unovis-line"
-              :x="sampleIndex"
-              :y="signalValue"
-              color="var(--vis-color0)"
-              :line-width="2"
-              :duration="chartDuration"
-            />
-            <VisAxis
-              class="unovis-axis"
-              type="x"
-              :tick-values="chartData.map((sample) => sample.index)"
-              :tick-format="formatTimeline"
-              :tick-line="false"
-              :domain-line="false"
-            />
-            <VisAxis
-              class="unovis-axis"
-              type="y"
-              :tick-values="[60, 80, 100]"
-              :tick-format="formatSignal"
-              :tick-line="false"
-              :domain-line="false"
-            />
-          </VisXYContainer>
-          <figcaption>
-            Seven signal samples for {{ selected.name }}, ranging from
-            {{ Math.min(...selected.signalHistory) }} to {{ Math.max(...selected.signalHistory) }}
-            percent.
-          </figcaption>
-        </figure>
-      </n-card>
-
-      <motion.aside
-        class="telemetry-panel"
-        layout
-        :transition="stateTransition"
-      >
-        <header>
-          <div>
-            <span class="eyebrow">Selected station</span>
-            <h2>Station details</h2>
-          </div>
-          <n-badge
-            :label="selected.status"
-            :tone="badgeTone(selected.status)"
-          />
-        </header>
-
-        <n-combobox
-          class="station-picker"
-          v-model="query"
-          v-model:selected="selectedStation"
-          label="Find another station"
-          :items="stationOptions"
-          placeholder="Search all stations"
-          clearable
-        />
-
-        <div class="station-detail-stage">
-          <AnimatePresence>
-            <motion.div
-              :key="selected.id"
-              class="station-detail"
-              :initial="reduceMotion ? undefined : { opacity: 0, x: 18 }"
-              :animate="{ opacity: 1, x: 0 }"
-              :exit="{ opacity: 0, x: -18 }"
-              :transition="enterTransition"
+            <motion.span
+              :key="syncMotionRevision"
+              class="icon"
+              aria-hidden="true"
+              :initial="{ rotate: 0 }"
+              :animate="{ rotate: syncMotionRevision === 0 ? 0 : 360 }"
+              :transition="{ duration: 0.62, ease: 'easeInOut' }"
+              >↻</motion.span
             >
-              <div class="telemetry-list">
-                <n-progress
-                  label="Signal"
-                  :value="selected.signal"
-                  :max="100"
-                />
-                <n-progress
-                  label="Battery"
-                  :value="selected.battery"
-                  :max="100"
-                />
-                <n-progress
-                  label="Sample capacity"
-                  :value="selected.capacity"
-                  :max="100"
-                />
+            {{ syncing ? "Syncing" : "Sync data" }}
+          </n-button>
+          <n-dialog
+            v-model:open="dialogOpen"
+            class="n-dialog -report"
+            force-motion-preview
+            trigger-label="Create report"
+            title="Create network report"
+            description="Export the current operational snapshot for the handover log."
+          >
+            <div class="n-dialog-content">
+              <p class="p">
+                The report includes station status, the selected signal history, and the latest
+                telemetry received by this browser session.
+              </p>
+            </div>
+            <template #actions>
+              <div class="n-dialog-actions">
+                <n-button class="n-button">Export report</n-button>
               </div>
-
-              <dl class="readings">
-                <div>
-                  <dt>Pressure</dt>
-                  <dd>{{ selected.pressure }}</dd>
-                </div>
-                <div>
-                  <dt>Salinity</dt>
-                  <dd>{{ selected.salinity }}</dd>
-                </div>
-                <div>
-                  <dt>Drift</dt>
-                  <dd>{{ selected.drift }}</dd>
-                </div>
-                <div>
-                  <dt>Last packet</dt>
-                  <dd>{{ selected.lastPacket }}</dd>
-                </div>
-              </dl>
-            </motion.div>
-          </AnimatePresence>
+            </template>
+          </n-dialog>
         </div>
-      </motion.aside>
-    </section>
-
-    <motion.section
-      class="station-section"
-      :initial="reduceMotion ? undefined : { opacity: 0, y: 10 }"
-      :while-in-view="{ opacity: 1, y: 0 }"
-      :in-view-options="{ once: true, amount: 0.2 }"
-      :transition="enterTransition"
-    >
-      <header>
-        <div>
-          <h2>Stations</h2>
-          <p>Priority stations ordered by operational status.</p>
-        </div>
-        <AnimatePresence mode="wait">
-          <motion.span
-            :key="lastSync"
-            class="sync-time"
-            :initial="reduceMotion ? undefined : { opacity: 0, y: 4 }"
-            :animate="{ opacity: 1, y: 0 }"
-            :exit="{ opacity: 0, y: -4 }"
-            :transition="enterTransition"
-          >
-            Updated {{ lastSync }}
-          </motion.span>
-        </AnimatePresence>
       </header>
 
-      <n-table
-        :rows="stations"
-        :columns="stationColumns"
-        caption="Priority monitoring stations"
-        caption-hidden
-        row-key="id"
+      <section
+        class="section -metrics"
+        aria-label="Network summary"
       >
-        <template #cell-name="{ row }">
-          <span class="station-name">
-            <span
-              class="station-dot"
-              aria-hidden="true"
+        <article class="article">
+          <span class="text -metric-label">Stations online</span>
+          <strong class="strong">18 / 18</strong>
+          <span
+            class="text -change"
+            data-positive
+            >All reporting</span
+          >
+        </article>
+        <article class="article">
+          <span class="text -metric-label">Selected signal</span>
+          <strong class="strong">{{ selected.signal }}%</strong>
+          <span class="text -change">{{ selected.name }}</span>
+        </article>
+        <article class="article">
+          <span class="text -metric-label">Network availability</span>
+          <strong class="strong">99.98%</strong>
+          <span class="text -change">30-day window</span>
+        </article>
+        <article class="article">
+          <span class="text -metric-label">Next transfer</span>
+          <strong class="strong">42 min</strong>
+          <span class="text -change">Sandwich 04</span>
+        </article>
+      </section>
+
+      <section class="section -operations">
+        <signal-quality-card
+          :selected="selected"
+          :stations="stations"
+          :timeline="signalTimeline"
+          @select="selectStation"
+          @rendered="chartRendered = true"
+        />
+
+        <aside class="aside">
+          <header class="header">
+            <div class="unit -heading">
+              <span class="text -eyebrow">Selected station</span>
+              <h2 class="title">Station details</h2>
+            </div>
+            <n-badge
+              :label="selected.status"
+              :tone="badgeTone(selected.status)"
             />
-            <span>
-              <strong>{{ row.name }}</strong>
-              <small>{{ row.temperature }}</small>
-            </span>
-          </span>
-        </template>
-        <template #cell-signal="{ value }">{{ value }}%</template>
-        <template #cell-status="{ value }">
-          <n-badge
-            :label="String(value)"
-            :tone="badgeTone(value as StationStatus)"
+          </header>
+
+          <n-combobox
+            v-model="query"
+            v-model:selected="selectedStation"
+            class="n-combobox -station-picker"
+            label="Find another station"
+            :items="stationOptions"
+            placeholder="Search all stations"
+            clearable
+            force-motion-preview
           />
-        </template>
-      </n-table>
-    </motion.section>
-  </main>
+
+          <div class="unit -meters">
+            <n-meter
+              label="Signal"
+              :value="selected.signal"
+              :max="100"
+              :motion-active="pageReady"
+            />
+            <n-meter
+              label="Battery"
+              :value="selected.battery"
+              :max="100"
+              :motion-active="pageReady"
+            />
+            <n-meter
+              label="Sample capacity"
+              :value="selected.capacity"
+              :max="100"
+              :motion-active="pageReady"
+            />
+          </div>
+
+          <dl class="list -description">
+            <div class="field">
+              <dt class="term">Pressure</dt>
+              <dd class="definition">{{ selected.pressure }}</dd>
+            </div>
+            <div class="field">
+              <dt class="term">Salinity</dt>
+              <dd class="definition">{{ selected.salinity }}</dd>
+            </div>
+            <div class="field">
+              <dt class="term">Drift</dt>
+              <dd class="definition">{{ selected.drift }}</dd>
+            </div>
+            <div class="field">
+              <dt class="term">Last packet</dt>
+              <dd class="definition">{{ selected.lastPacket }}</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
+
+      <section class="section -stations">
+        <header class="header">
+          <div class="unit -heading">
+            <h2 class="title">Stations</h2>
+            <p class="p">Priority stations ordered by operational status.</p>
+          </div>
+          <time class="time">Updated {{ lastSync }}</time>
+        </header>
+
+        <n-table
+          class="n-table"
+          :rows="stations"
+          :columns="stationColumns"
+          caption="Priority monitoring stations"
+          caption-hidden
+          row-key="id"
+        >
+          <template #cell-name="{ row }">
+            <span class="n-table-cell-content -station">
+              <span
+                class="icon"
+                aria-hidden="true"
+              />
+              <span class="text">
+                <strong class="strong">{{ row.name }}</strong>
+                <small class="note">{{ row.temperature }}</small>
+              </span>
+            </span>
+          </template>
+          <template #cell-signal="{ value }">{{ value }}%</template>
+          <template #cell-status="{ value }">
+            <n-badge
+              :label="String(value)"
+              :tone="badgeTone(value as StationStatus)"
+            />
+          </template>
+        </n-table>
+      </section>
+
+      <n-toast
+        :manager="toastManager"
+        label="Network activity"
+        force-motion-preview
+      />
+    </main>
+
+    <dashboard-skeleton
+      :data-ready="pageReady"
+      :aria-hidden="pageReady ? 'true' : undefined"
+    />
+  </div>
 </template>
+
+<style scoped>
+.deep-sea-dashboard-view {
+  --local-eyebrow-tracking: 0.08em;
+  --local-metric-size: 1.375rem;
+  --local-panel-tracking: 0.06em;
+  --local-page-title-max: 2rem;
+  --local-page-title-min: 1.5rem;
+  --local-tight-tracking: -0.025em;
+
+  display: grid;
+  inline-size: 100%;
+  justify-items: center;
+  min-inline-size: 0;
+
+  > .main,
+  > .deep-sea-dashboard-skeleton {
+    grid-area: 1 / 1;
+  }
+
+  > .main {
+    display: grid;
+    gap: var(--n-space-7);
+    inline-size: min(100%, 82rem);
+    margin-inline: auto;
+    padding: var(--n-space-8);
+    transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+
+    &[data-ready="false"] {
+      visibility: hidden;
+      opacity: 0;
+    }
+
+    > .header.-page {
+      display: flex;
+      gap: var(--n-space-8);
+      align-items: end;
+      justify-content: space-between;
+      block-size: 5.125rem;
+
+      > .unit.-heading {
+        max-inline-size: 38rem;
+
+        > .p.-eyebrow {
+          margin-block: 0 var(--n-space-3);
+          color: var(--nagi-color-text-muted);
+          font-size: var(--n-font-size-1);
+          font-weight: 650;
+          letter-spacing: var(--local-eyebrow-tracking);
+          text-transform: uppercase;
+        }
+
+        > .title {
+          margin: 0;
+          font-size: clamp(var(--local-page-title-min), 2.4vw, var(--local-page-title-max));
+          font-weight: 620;
+          letter-spacing: var(--local-tight-tracking);
+          line-height: 1.08;
+        }
+
+        > .p.-lede {
+          margin: var(--n-space-3) 0 0;
+          color: var(--nagi-color-text-muted);
+          font-size: var(--n-font-size-4);
+        }
+      }
+
+      > .actions {
+        display: flex;
+        flex: 0 0 auto;
+        gap: var(--n-space-4);
+        align-items: center;
+
+        > .n-button.-sync {
+          --button-size: small;
+          --button-appearance: outlined;
+
+          gap: var(--n-space-3);
+
+          .n-button-content {
+            > .icon {
+              display: inline-grid;
+              place-items: center;
+              font-size: var(--n-font-size-4);
+              line-height: 1;
+            }
+          }
+        }
+
+        > .n-dialog.-report {
+          --dialog-backdrop-background: var(--deep-sea-backdrop);
+          --dialog-backdrop-filter: blur(1px);
+          --dialog-surface-background: var(--nagi-color-surface-raised);
+          --dialog-surface-border-color: var(--nagi-color-border-strong);
+
+          .n-dialog-content {
+            > .p {
+              max-inline-size: 32rem;
+              margin: 0;
+              color: var(--nagi-color-text-muted);
+              font-size: var(--n-font-size-4);
+            }
+          }
+        }
+      }
+    }
+
+    > .section.-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--n-space-5);
+
+      > .article {
+        display: grid;
+        gap: var(--n-space-2);
+        padding: var(--n-space-7) var(--n-space-8);
+        border: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+        border-radius: var(--n-radius-3);
+        background: var(--nagi-color-surface);
+
+        > .text.-metric-label,
+        > .text.-change {
+          overflow: hidden;
+          color: var(--nagi-color-text-muted);
+          font-size: var(--n-font-size-1);
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        > .text.-metric-label {
+          font-weight: 650;
+        }
+
+        > .strong {
+          color: var(--nagi-color-text);
+          font-size: var(--local-metric-size);
+          font-weight: 580;
+          letter-spacing: var(--local-tight-tracking);
+          line-height: 1.2;
+        }
+
+        > .text.-change[data-positive] {
+          color: var(--nagi-color-success);
+        }
+      }
+    }
+
+    > .section.-operations {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(17rem, 0.72fr);
+      gap: var(--n-space-5);
+
+      > .aside {
+        display: grid;
+        gap: var(--n-space-7);
+        align-content: start;
+        padding: var(--n-space-7) var(--n-space-8) var(--n-space-8);
+        overflow: hidden;
+        border: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+        border-radius: var(--n-radius-3);
+        background: var(--nagi-color-surface);
+
+        > .header {
+          display: flex;
+          align-items: start;
+          justify-content: space-between;
+
+          > .unit.-heading {
+            > .text.-eyebrow {
+              color: var(--nagi-color-text-muted);
+              font-size: var(--n-font-size-1);
+              font-weight: 650;
+              letter-spacing: var(--local-panel-tracking);
+              text-transform: uppercase;
+            }
+
+            > .title {
+              margin: var(--n-space-1) 0 0;
+              font-size: var(--n-font-size-4);
+              font-weight: 650;
+            }
+          }
+        }
+
+        > .n-combobox.-station-picker {
+          inline-size: 100%;
+        }
+
+        > .unit.-meters {
+          display: grid;
+          gap: var(--n-space-6);
+        }
+
+        > .list.-description {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          margin: 0;
+          border-block-start: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+          border-inline-start: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+
+          > .field {
+            padding: var(--n-space-5);
+            border-block-end: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+            border-inline-end: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+
+            > .term {
+              color: var(--nagi-color-text-muted);
+              font-size: var(--n-font-size-1);
+            }
+
+            > .definition {
+              margin: var(--n-space-1) 0 0;
+              color: var(--nagi-color-text);
+              font-size: var(--n-font-size-2);
+              font-weight: 600;
+            }
+          }
+        }
+      }
+    }
+
+    > .section.-stations {
+      display: grid;
+      gap: var(--n-space-5);
+
+      > .header {
+        display: flex;
+        gap: var(--n-space-8);
+        align-items: end;
+        justify-content: space-between;
+        padding-block-start: var(--n-space-2);
+
+        > .unit.-heading {
+          > .title {
+            margin: 0;
+            font-size: var(--n-font-size-4);
+            font-weight: 650;
+          }
+
+          > .p {
+            margin: var(--n-space-1) 0 0;
+            color: var(--nagi-color-text-muted);
+            font-size: var(--n-font-size-1);
+          }
+        }
+
+        > .time {
+          color: var(--nagi-color-text-muted);
+          font-size: var(--n-font-size-1);
+        }
+      }
+
+      > .n-table {
+        border-color: var(--nagi-color-border-muted);
+        border-radius: var(--n-radius-3);
+        background: var(--nagi-color-surface);
+
+        .n-table-cell-content.-station {
+          display: flex;
+          gap: var(--n-space-4);
+          align-items: center;
+
+          > .icon {
+            inline-size: var(--n-space-3);
+            block-size: var(--n-space-3);
+            border-radius: 50%;
+            background: var(--nagi-color-accent);
+          }
+
+          > .text {
+            display: grid;
+
+            > .note {
+              color: var(--nagi-color-text-muted);
+              font-weight: 400;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  > .deep-sea-dashboard-skeleton {
+    transition:
+      opacity 0.36s ease,
+      visibility 0s linear 0.42s;
+
+    &[data-ready="true"] {
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+}
+
+@media (max-width: 68rem) {
+  .deep-sea-dashboard-view {
+    > .main {
+      > .section.-operations {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}
+
+@media (max-width: 44rem) {
+  .deep-sea-dashboard-view {
+    > .main {
+      padding: var(--n-space-8);
+
+      > .header.-page {
+        align-items: start;
+        flex-direction: column;
+        gap: var(--n-space-7);
+        block-size: auto;
+
+        > .actions {
+          flex-wrap: wrap;
+        }
+      }
+
+      > .section.-metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      > .section.-stations {
+        > .header {
+          align-items: start;
+          flex-direction: column;
+        }
+      }
+    }
+  }
+}
+</style>

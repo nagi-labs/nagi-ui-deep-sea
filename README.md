@@ -48,9 +48,11 @@ installs still include the complete verification toolchain.
 3. Change `--nagi-color-accent` in
    [`src/theme/deep-sea.css`](src/theme/deep-sea.css). The chart, focus states,
    status details, and owned components update from one semantic decision.
-4. Run `vp run lint`. Nagi CSS verifies surface names, semantic element classes,
-   direct-child selector structure, component boundaries, runtime-state
-   attributes, and semantic-token use.
+4. Open [`eslint.config.mjs`](eslint.config.mjs) to see the enforced Nagi CSS
+   contract. A full local install can run `vp run lint` to verify surface names,
+   semantic element classes, direct-child selector structure, component
+   boundaries, runtime-state attributes, and semantic-token use. The lightweight
+   StackBlitz preview intentionally omits this verification toolchain.
 
 The application intentionally has no catch-all global component stylesheet.
 Each visible surface owns its markup and scoped CSS; the theme file owns only

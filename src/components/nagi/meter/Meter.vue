@@ -1,7 +1,7 @@
 <!-- @nagi-source meter/Meter.vue@0.1.0 -->
 <script setup lang="ts">
 import { motion } from "motion-v";
-import { computed, onBeforeUnmount, onMounted, ref, useAttrs, useId } from "vue";
+import { computed, useAttrs, useId } from "vue";
 
 import { mergeElementProps } from "@nagi-labs/nagi-ui";
 
@@ -38,11 +38,7 @@ const normalizedValue = computed(() => {
   return Math.min(1, Math.max(0, (value - min) / range));
 });
 const formattedValue = computed(() => `${Math.round(normalizedValue.value * 100)}%`);
-const motionReady = ref(false);
-const visualScale = computed(() =>
-  motionReady.value && motionActive ? normalizedValue.value : 0,
-);
-let motionFrame: number | undefined;
+const visualScale = computed(() => (motionActive ? normalizedValue.value : 0));
 const meterTransition = {
   type: "spring" as const,
   stiffness: 210,
@@ -60,16 +56,6 @@ const meterProps = computed(() =>
     optimum,
   }),
 );
-
-onMounted(() => {
-  motionFrame = requestAnimationFrame(() => {
-    motionReady.value = true;
-  });
-});
-
-onBeforeUnmount(() => {
-  if (motionFrame !== undefined) cancelAnimationFrame(motionFrame);
-});
 </script>
 
 <template>
@@ -99,13 +85,13 @@ onBeforeUnmount(() => {
       <motion.span
         class="seg -fill"
         data-part="indicator"
-        :initial="false"
+        :initial="{ scaleX: 0 }"
         :animate="{ scaleX: visualScale }"
         :transition="meterTransition"
       />
     </div>
     <meter
-      class="meter -native"
+      class="meter"
       data-part="control"
       v-bind="meterProps"
     >
@@ -159,7 +145,7 @@ onBeforeUnmount(() => {
     }
   }
 
-  > .meter.-native {
+  > .meter {
     position: fixed;
     inline-size: 1px;
     block-size: 1px;

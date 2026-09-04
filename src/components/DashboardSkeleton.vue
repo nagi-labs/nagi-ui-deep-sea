@@ -1,25 +1,9 @@
 <script setup lang="ts">
-import { useAnimate } from "motion-v";
-import { onMounted } from "vue";
-
 import { NSkeleton } from "./nagi";
-
-const [scope, animate] = useAnimate<HTMLDivElement>();
-
-onMounted(() => {
-  if (!scope.value) return;
-
-  animate(
-    ".n-skeleton",
-    { backgroundPosition: ["120% 0", "-120% 0"] },
-    { duration: 1.6, ease: "easeInOut", repeat: Infinity },
-  );
-});
 </script>
 
 <template>
   <div
-    ref="scope"
     class="deep-sea-dashboard-skeleton"
     role="status"
     aria-label="Loading dashboard"
@@ -63,7 +47,7 @@ onMounted(() => {
         <n-skeleton class="n-skeleton -chart" />
       </article>
 
-      <aside class="aside -station">
+      <aside class="aside">
         <div class="unit -heading">
           <div class="seg">
             <n-skeleton class="n-skeleton -eyebrow" />
@@ -159,8 +143,6 @@ onMounted(() => {
       border-radius: var(--n-radius-3);
       background: var(--nagi-color-surface);
 
-      &.-chart,
-      &.-station,
       > .unit.-meters,
       > .unit.-choices {
         display: grid;
@@ -170,6 +152,12 @@ onMounted(() => {
       > .unit.-choices {
         grid-template-columns: repeat(5, 1fr);
       }
+    }
+
+    > .article.-chart,
+    > .aside {
+      display: grid;
+      gap: var(--n-space-6);
     }
   }
 

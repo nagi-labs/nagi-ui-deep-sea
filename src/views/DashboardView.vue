@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { motion } from "motion-v";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { RouterLink } from "vue-router";
 
 import { createToastManager } from "@nagi-labs/nagi-ui";
 
@@ -88,11 +89,17 @@ onMounted(() => {
     >
       <header class="header -page">
         <div class="unit -heading">
-          <p class="p -eyebrow">Pacific monitoring network</p>
+          <span class="text -eyebrow">Pacific monitoring network</span>
           <h1 class="title">Network overview</h1>
           <p class="p -lede">Station health, signal quality, and scheduled transfers.</p>
         </div>
         <div class="actions">
+          <router-link
+            class="link"
+            :to="{ path: '/components', query: { source: 'page-dashboard-view' } }"
+          >
+            View page source
+          </router-link>
           <n-button
             class="n-button -sync"
             :disabled="syncing"
@@ -111,7 +118,7 @@ onMounted(() => {
           </n-button>
           <n-dialog
             v-model:open="dialogOpen"
-            class="n-dialog -report"
+            class="n-dialog"
             force-motion-preview
             trigger-label="Create report"
             title="Create network report"
@@ -186,7 +193,7 @@ onMounted(() => {
           <n-combobox
             v-model="query"
             v-model:selected="selectedStation"
-            class="n-combobox -station-picker"
+            class="n-combobox"
             label="Find another station"
             :items="stationOptions"
             placeholder="Search all stations"
@@ -215,7 +222,7 @@ onMounted(() => {
             />
           </div>
 
-          <dl class="list -description">
+          <dl class="list">
             <div class="field">
               <dt class="term">Pressure</dt>
               <dd class="definition">{{ selected.pressure }}</dd>
@@ -254,7 +261,7 @@ onMounted(() => {
           row-key="id"
         >
           <template #cell-name="{ row }">
-            <span class="n-table-cell-content -station">
+            <span class="n-table-cell-content">
               <span
                 class="icon"
                 aria-hidden="true"
@@ -331,7 +338,8 @@ onMounted(() => {
       > .unit.-heading {
         max-inline-size: 38rem;
 
-        > .p.-eyebrow {
+        > .text.-eyebrow {
+          display: block;
           margin-block: 0 var(--n-space-3);
           color: var(--nagi-color-text-muted);
           font-size: var(--n-font-size-1);
@@ -361,6 +369,27 @@ onMounted(() => {
         gap: var(--n-space-4);
         align-items: center;
 
+        > .link {
+          padding: var(--n-space-3) var(--n-space-5);
+          border: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+          border-radius: var(--n-radius-2);
+          color: var(--nagi-color-text-muted);
+          font-size: var(--n-font-size-2);
+          font-weight: 600;
+          text-decoration: none;
+
+          &:hover {
+            border-color: var(--nagi-color-border-strong);
+            background: var(--nagi-color-surface-raised);
+            color: var(--nagi-color-text);
+          }
+
+          &:focus-visible {
+            outline: none;
+            box-shadow: var(--nagi-shadow-focus);
+          }
+        }
+
         > .n-button.-sync {
           --button-size: small;
           --button-appearance: outlined;
@@ -377,7 +406,7 @@ onMounted(() => {
           }
         }
 
-        > .n-dialog.-report {
+        > .n-dialog {
           --dialog-backdrop-background: var(--deep-sea-backdrop);
           --dialog-backdrop-filter: blur(1px);
           --dialog-surface-background: var(--nagi-color-surface-raised);
@@ -472,7 +501,7 @@ onMounted(() => {
           }
         }
 
-        > .n-combobox.-station-picker {
+        > .n-combobox {
           inline-size: 100%;
         }
 
@@ -481,7 +510,7 @@ onMounted(() => {
           gap: var(--n-space-6);
         }
 
-        > .list.-description {
+        > .list {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           margin: 0;
@@ -545,7 +574,7 @@ onMounted(() => {
         border-radius: var(--n-radius-3);
         background: var(--nagi-color-surface);
 
-        .n-table-cell-content.-station {
+        .n-table-cell-content {
           display: flex;
           gap: var(--n-space-4);
           align-items: center;

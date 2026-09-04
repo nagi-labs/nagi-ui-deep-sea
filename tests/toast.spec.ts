@@ -125,23 +125,12 @@ test.describe(
         )
         .toBe(true);
 
-      await stack.hover();
-      await expect(stack).toHaveAttribute("data-expanded", "");
-      await expect
-        .poll(async () => {
-          const tops = await items.evaluateAll((elements) =>
-            elements.map((element) => element.getBoundingClientRect().top),
-          );
-          return (tops[0] ?? 0) - (tops[1] ?? 0);
-        })
-        .toBeGreaterThan(70);
-
       await items.first().getByRole("button", { name: "Dismiss notification" }).click();
       await expect(items).toHaveCount(2, { timeout: 1000 });
     }
 
     test(
-      "Animates insertion, compact stacking, attention expansion, reflow, and removal",
+      "Animates insertion, vertical reflow, and removal with keyed layout items",
       {
         tag: ["@style", "@interaction", `@${DEEP_SEA_TOAST_IMPLEMENTATION_03.name}`],
       },

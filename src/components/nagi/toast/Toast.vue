@@ -1,19 +1,17 @@
 <!-- @nagi-source toast/Toast.vue@0.1.0 -->
 <script setup lang="ts">
-import { AnimatePresence, motion, useReducedMotion } from "motion-v";
-import { computed, nextTick, ref, watch, type StyleValue } from "vue";
+import { AnimatePresence, motion, MotionConfig } from "motion-v";
+import { useAttrs } from "vue";
 
 import { type ToastItem, type ToastManager } from "@nagi-labs/nagi-ui";
 import { useToastRenderer } from "@nagi-labs/nagi-ui/component-controls";
+import { useToastMotion } from "./useToastMotion";
 
 defineOptions({ inheritAttrs: false });
 
 const props = withDefaults(
   defineProps<{
     id?: string;
-    class?: string;
-    style?: StyleValue;
-    title?: string;
     manager?: ToastManager;
     duration?: number;
     limit?: number;
@@ -29,114 +27,22 @@ const props = withDefaults(
     forceMotionPreview: false,
   },
 );
+const attrs = useAttrs();
 
 const notifier = useToastRenderer(props);
-const visibleToasts = computed(() => [...notifier.toasts.value].reverse());
-const userPrefersReducedMotion = useReducedMotion();
-const reduceMotion = computed(
-  () => !props.forceMotionPreview && userPrefersReducedMotion.value,
-);
-const pointerInside = ref(false);
-const focusInside = ref(false);
-const expansionHeldDuringExit = ref(false);
-const removalInProgress = ref(false);
-const expanded = computed(
-  () => pointerInside.value || focusInside.value || expansionHeldDuringExit.value,
-);
-const stackPadding = computed(() => {
-  const hiddenItemCount = Math.max(visibleToasts.value.length - 1, 0);
-  return hiddenItemCount * (expanded.value ? 92 : 12);
+const toastMotion = useToastMotion({
+  regionElement: notifier.regionElement,
+  toasts: notifier.toasts,
 });
-const itemTransition = computed(() =>
-  reduceMotion.value
-    ? { duration: 0 }
-    : removalInProgress.value
-      ? { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
-      : { duration: 0.34, ease: [0.22, 1, 0.36, 1] },
-);
-const exitTransition = computed(() =>
-  reduceMotion.value ? { duration: 0 } : { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
-);
-const stackTransition = computed(() =>
-  reduceMotion.value
-    ? { duration: 0 }
-    : removalInProgress.value
-      ? { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
-      : { type: "spring" as const, visualDuration: 0.46, bounce: 0.08 },
-);
-let exitPending = false;
-
-function itemState(index: number) {
-  if (expanded.value) {
-    return { opacity: 1, x: 0, y: index * -92, scale: 1 };
-  }
-
-  return {
-    opacity: Math.max(0.68, 1 - index * 0.16),
-    x: 0,
-    y: index * -12,
-    scale: Math.max(0.9, 1 - index * 0.04),
-  };
-}
-
-function exitState() {
-  return reduceMotion.value
-    ? { opacity: 0, transition: exitTransition.value }
-    : { opacity: 0, x: 72, scale: 0.96, transition: exitTransition.value };
-}
-
-function setPointerInside(value: boolean) {
-  pointerInside.value = value;
-}
-
-function setFocusInside(value: boolean) {
-  focusInside.value = value;
-}
-
-function handleFocusOut(event: FocusEvent) {
-  const nextTarget = event.relatedTarget;
-  const currentTarget = event.currentTarget as HTMLElement | null;
-  if (!(nextTarget instanceof Node) || !currentTarget?.contains(nextTarget)) {
-    setFocusInside(false);
-  }
-}
-
-function showRegion() {
-  const region = notifier.regionElement.value;
-  if (region?.isConnected && !region.matches(":popover-open")) region.showPopover();
-}
-
-watch(notifier.toasts, async (items, previousItems) => {
-  if (items.length < previousItems.length) removalInProgress.value = true;
-
-  if (
-    items.length < previousItems.length &&
-    (pointerInside.value || focusInside.value)
-  ) {
-    expansionHeldDuringExit.value = true;
-  }
-
-  if (items.length > 0) {
-    exitPending = false;
-    showRegion();
-    return;
-  }
-
-  exitPending = true;
-  await nextTick();
-  if (exitPending) showRegion();
-});
-
-async function finishExit() {
-  exitPending = false;
-  await nextTick();
-  removalInProgress.value = false;
-  expansionHeldDuringExit.value = false;
-  const region = notifier.regionElement.value;
-  if (notifier.toasts.value.length === 0 && region?.matches(":popover-open")) {
-    region.hidePopover();
-  }
-}
+const { visibleToasts } = toastMotion;
+const toastTransition = {
+  type: "spring" as const,
+  visualDuration: 0.36,
+  bounce: 0.08,
+};
+const toastInitial = { opacity: 0, x: 48, scale: 0.96 };
+const toastVisible = { opacity: 1, x: 0, scale: 1 };
+const toastExit = { opacity: 0, x: 48, scale: 0.96 };
 
 function announcement(item: ToastItem) {
   return [item.title, item.description].filter(Boolean).join(". ");
@@ -147,7 +53,6 @@ function runAction(item: ToastItem) {
 }
 
 function dismiss(itemId: string) {
-  expansionHeldDuringExit.value = expanded.value;
   notifier.close(itemId);
 }
 
@@ -164,90 +69,85 @@ defineExpose({
 
 <template>
   <div
+    v-bind="attrs"
     class="n-toast"
-    :class="props.class"
-    :style="props.style"
-    :title="props.title"
   >
     <div class="unit -announcements">
-      <p
+      <span
         v-for="item in notifier.toasts.value"
         :key="`${item.id}-${item.revision}`"
-        class="p"
+        class="text"
         :role="item.priority === 'assertive' ? 'alert' : 'status'"
         aria-atomic="true"
       >
         {{ announcement(item) }}
-      </p>
+      </span>
     </div>
 
     <div
-      class="unit"
+      class="unit -stack"
       v-bind="notifier.regionProps"
     >
-      <motion.ol
-        class="list"
-        data-motion-toast-stack
-        :data-expanded="expanded ? '' : undefined"
-        :data-motion-policy="reduceMotion ? 'reduced' : 'animated'"
-        :animate="{ paddingTop: stackPadding }"
-        :transition="stackTransition"
-        @pointerenter="setPointerInside(true)"
-        @pointerleave="setPointerInside(false)"
-        @focusin="setFocusInside(true)"
-        @focusout="handleFocusOut"
-      >
-        <AnimatePresence
-          mode="sync"
-          :initial="false"
-          @exit-complete="finishExit"
+      <motion-config :reduced-motion="forceMotionPreview ? 'never' : 'user'">
+        <motion.ol
+          class="list"
+          data-motion-toast-stack
+          :data-motion-policy="forceMotionPreview ? 'animated' : 'user'"
+          layout
+          :transition="toastTransition"
         >
-          <motion.li
-            v-for="(item, index) in visibleToasts"
-            :key="item.id"
-            class="item"
-            :data-tone="item.tone"
-            data-motion-toast-item
-            :style="{ zIndex: visibleToasts.length - index }"
-            :initial="reduceMotion ? false : { opacity: 0, x: 72, y: 18, scale: 0.92 }"
-            :animate="itemState(index)"
-            :exit="exitState()"
-            :transition="itemTransition"
-            v-bind="notifier.toastItemProps(item)"
+          <AnimatePresence
+            mode="popLayout"
+            :initial="false"
+            @exit-complete="toastMotion.finishExit"
           >
-            <strong
-              v-if="item.title"
-              class="strong"
+            <motion.li
+              v-for="item in visibleToasts"
+              :key="item.id"
+              class="item"
+              :data-tone="item.tone"
+              data-motion-toast-item
+              layout
+              :initial="toastInitial"
+              :animate="toastVisible"
+              :exit="toastExit"
+              :transition="toastTransition"
+              v-bind="notifier.toastItemProps(item)"
             >
-              {{ item.title }}
-            </strong>
-            <p
-              v-if="item.description"
-              class="p"
-            >
-              {{ item.description }}
-            </p>
-            <div class="actions">
-              <button
-                v-if="item.action"
-                class="button -action"
-                type="button"
-                @click="runAction(item)"
+              <strong
+                v-if="item.title"
+                class="strong"
               >
-                {{ item.action.label }}
-              </button>
-              <button
-                class="button -dismiss"
-                type="button"
-                :aria-label="dismissLabel"
-                @click="dismiss(item.id)"
+                {{ item.title }}
+              </strong>
+              <p
+                v-if="item.description"
+                class="p"
               >
-                ×
-              </button>
-            </div>
-          </motion.li>
-        </AnimatePresence>
-      </motion.ol>
+                {{ item.description }}
+              </p>
+              <div class="actions">
+                <button
+                  v-if="item.action"
+                  class="button -action"
+                  type="button"
+                  @click="runAction(item)"
+                >
+                  {{ item.action.label }}
+                </button>
+                <button
+                  class="button -dismiss"
+                  type="button"
+                  :aria-label="dismissLabel"
+                  @click="dismiss(item.id)"
+                >
+                  ×
+                </button>
+              </div>
+            </motion.li>
+          </AnimatePresence>
+        </motion.ol>
+      </motion-config>
     </div>
   </div>
 </template>
@@ -263,13 +163,9 @@ defineExpose({
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-
-    > .p {
-      margin: 0;
-    }
   }
 
-  > .unit {
+  > .unit.-stack {
     position: fixed;
     inset: auto 1rem 1rem auto;
     margin: 0;
@@ -278,16 +174,16 @@ defineExpose({
     background: transparent;
 
     > .list {
+      position: relative;
       display: grid;
+      gap: var(--nagi-space-item-gap);
       align-items: end;
       min-inline-size: min(22rem, calc(100vi - 2rem));
       margin: 0;
       padding: 0;
       list-style: none;
-      perspective: 60rem;
 
       > .item {
-        grid-area: 1 / 1;
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         gap: var(--nagi-space-item-gap);
@@ -298,7 +194,6 @@ defineExpose({
         background: var(--nagi-color-surface);
         color: var(--nagi-color-text);
         box-shadow: var(--nagi-shadow-overlay);
-        transform-origin: 50% 100%;
         will-change: transform, opacity;
 
         > .strong {

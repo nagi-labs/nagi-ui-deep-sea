@@ -41,7 +41,7 @@ const attrs = useAttrs();
         >
       </div>
     </header>
-    <div class="unit">
+    <div class="unit -primary">
       <slot />
     </div>
     <div
@@ -77,7 +77,7 @@ const attrs = useAttrs();
     }
   }
 
-  > .unit {
+  > .unit.-primary {
     padding: var(--n-space-8);
   }
 

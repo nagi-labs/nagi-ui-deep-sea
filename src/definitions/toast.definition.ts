@@ -6,19 +6,19 @@ import { toastContract } from "@nagi-labs/nagi-ui/contracts/toast";
 
 export const motionToastImplementation = defineComponentImplementation({
   id: "deep-sea/toast-motion-stack",
-  title: "Deep Sea Motion Toast stack",
+  title: "Deep Sea Motion Toast list",
   version: "1",
   strategy: "platform-first-with-delegated-presence",
   description:
-    "Deep Sea retains Nagi's explicit manager, native manual-popover layer, announcements, and focus routing while Motion owns item presence and visual stacking.",
+    "Deep Sea retains Nagi's explicit manager, native manual-popover layer, announcements, and focus routing while Motion owns keyed item presence and vertical reflow.",
   references: [
     {
-      id: "motion-v-toast-stack",
-      title: "Motion for Vue — Stacked notifications",
-      url: "https://motion.dev/examples/vue-toast-stack",
+      id: "motion-v-animate-presence-modes",
+      title: "Motion for Vue — AnimatePresence modes",
+      url: "https://motion.dev/examples/vue-animate-presence-modes",
       kind: "example",
-      revision: "reviewed 2026-09-03",
-      reviewedAt: "2026-09-03",
+      revision: "reviewed 2026-09-04",
+      reviewedAt: "2026-09-04",
     },
     {
       id: "motion-v-animate-presence",
@@ -35,21 +35,33 @@ export const motionToastImplementation = defineComponentImplementation({
       value: "native-manual-popover",
       description:
         "The Nagi renderer continues to own top-layer promotion and F6 routing through one native manual popover.",
-      evidence: ["src/components/nagi/toast/Toast.vue", "tests/toast.spec.ts"],
+      evidence: [
+        "src/components/nagi/toast/Toast.vue",
+        "src/components/nagi/toast/useToastMotion.ts",
+        "tests/toast.spec.ts",
+      ],
     },
     {
       name: "presence",
       value: "motion-animate-presence-items",
       description:
         "AnimatePresence retains removed notification DOM only for its visual exit; manager state remains authoritative.",
-      evidence: ["src/components/nagi/toast/Toast.vue", "tests/toast.spec.ts"],
+      evidence: [
+        "src/components/nagi/toast/Toast.vue",
+        "src/components/nagi/toast/useToastMotion.ts",
+        "tests/toast.spec.ts",
+      ],
     },
     {
       name: "layout",
-      value: "compact-depth-stack-expand-on-attention",
+      value: "keyed-vertical-layout-list",
       description:
-        "Items rest in one compact depth stack and expand while pointer or keyboard attention is inside it.",
-      evidence: ["src/components/nagi/toast/Toast.vue", "tests/toast.spec.ts"],
+        "Each notification is a keyed layout item; popLayout removes exiting items from flow while the remaining items reflow.",
+      evidence: [
+        "src/components/nagi/toast/Toast.vue",
+        "src/components/nagi/toast/useToastMotion.ts",
+        "tests/toast.spec.ts",
+      ],
     },
   ],
   anatomy: [
@@ -57,7 +69,7 @@ export const motionToastImplementation = defineComponentImplementation({
       id: "DEEP_SEA_TOAST_IMPLEMENTATION_01",
       evidence: ["tests/toast.spec.ts"],
       name: "motion-stack",
-      description: "The visual list whose padding and child positions form the depth stack.",
+      description: "The positioned visual list that coordinates keyed layout changes.",
       match: { by: "marker", attribute: "data-motion-toast-stack" },
     },
     {
@@ -83,7 +95,7 @@ export const motionToastImplementation = defineComponentImplementation({
       id: "DEEP_SEA_TOAST_IMPLEMENTATION_03",
       classification: "implementation-constraint",
       source: "Deep Sea notification stack motion",
-      text: "Insertion, compact stacking, attention expansion, reflow, and removal use non-zero Motion transitions in the forced showcase profile.",
+      text: "Insertion, keyed vertical reflow, and removal use non-zero Motion transitions in the forced showcase profile.",
       evidence: ["tests/toast.spec.ts"],
       origin: { kind: "nagi", policy: "deep-sea-toast-motion-stack", policyVersion: "1" },
     },

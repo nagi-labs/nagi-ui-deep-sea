@@ -120,6 +120,10 @@ export default [
   {
     files: ["src/components/nagi/**/*.vue"],
     rules: {
+      // These components declare TypeScript-optional native pass-through props.
+      // Their intentional default is undefined; repeating `prop: undefined` in
+      // every withDefaults object would add no runtime or type guarantee.
+      "vue/require-default-prop": "off",
       "nagi-css/unverifiable-dynamic-class": "warn",
     },
   },

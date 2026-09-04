@@ -1,23 +1,52 @@
 <script setup lang="ts">
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
 import { NBadge, NButton, NCard } from "../components/nagi";
+import SourceBrowser from "../components/SourceBrowser.vue";
 import {
   componentGroups,
   ownedComponentCount,
   ownedSourceFileCount,
   verifiedDefinitions,
 } from "../data/components";
+import {
+  defaultSourceId,
+  findSourceFile,
+  pageSourceFiles,
+  primaryComponentSourceId,
+  sourceFilesForOwner,
+} from "../data/source-catalog";
 
-const sourceColumns = [
-  [componentGroups[0], componentGroups[2], componentGroups[4]],
-  [componentGroups[1], componentGroups[3]],
-] as const;
+const route = useRoute();
+const router = useRouter();
+const selectedSourceId = ref(defaultSourceId);
+const selectedSource = computed(() => findSourceFile(selectedSourceId.value));
+const siblingSources = computed(() => sourceFilesForOwner(selectedSource.value.ownerId));
+
+function sourceIdFromRoute() {
+  return typeof route.query.source === "string" ? route.query.source : defaultSourceId;
+}
+
+function synchronizeRouteSource() {
+  selectedSourceId.value = findSourceFile(sourceIdFromRoute()).id;
+}
+
+function selectSource(sourceId: string | undefined) {
+  if (!sourceId) return;
+  selectedSourceId.value = findSourceFile(sourceId).id;
+  void router.replace({ path: "/components", query: { source: selectedSourceId.value } });
+}
+
+onMounted(synchronizeRouteSource);
+watch(() => route.query.source, synchronizeRouteSource);
 </script>
 
 <template>
   <main class="deep-sea-component-source-view">
     <header class="header -page">
       <div class="unit -heading">
-        <p class="p -eyebrow">Source ownership</p>
+        <span class="text -eyebrow">Source ownership</span>
         <h1 class="title">Owned component source</h1>
         <p class="p -lede">
           Every component shown here is used by Deep Sea. Its Vue template, behavior wiring, styles,
@@ -25,7 +54,7 @@ const sourceColumns = [
         </p>
       </div>
       <a
-        class="link -github"
+        class="link"
         href="https://github.com/nagi-labs/nagi-ui-deep-sea/tree/main/src/components/nagi"
         target="_blank"
         rel="noreferrer"
@@ -53,7 +82,7 @@ const sourceColumns = [
     </section>
 
     <n-card
-      class="n-card -ownership"
+      class="n-card"
       title="Ownership model"
       description="The installed package supplies shared behavior; the visible Vue structure belongs to this repository."
     >
@@ -76,42 +105,94 @@ const sourceColumns = [
       </template>
     </n-card>
 
-    <section class="section -sources">
-      <div
-        v-for="(column, columnIndex) in sourceColumns"
-        :key="columnIndex"
-        class="unit -column"
-      >
+    <section class="section -explorer">
+      <aside class="aside">
         <section
-          v-for="group in column"
-          :key="group.name"
-          class="section -group"
+          class="section -page-files"
+          aria-labelledby="page-source-title"
         >
           <header class="header">
-            <h2 class="title">{{ group.name }}</h2>
-            <span class="text">{{ group.components.length }}</span>
+            <div class="unit -heading">
+              <h2
+                id="page-source-title"
+                class="title"
+              >
+                Page source
+              </h2>
+              <p class="p">The application composing the owned components.</p>
+            </div>
           </header>
           <ul class="list">
             <li
-              v-for="component in group.components"
-              :key="component"
+              v-for="source in pageSourceFiles"
+              :key="source.id"
               class="item"
             >
-              <code class="code">{{ component }}.vue</code>
-              <n-badge
-                v-if="verifiedDefinitions.has(component)"
-                label="Definition verified"
-                tone="success"
-              />
-              <n-badge
-                v-else
-                label="Definition WIP"
-                tone="neutral"
-              />
+              <button
+                class="button"
+                type="button"
+                :aria-pressed="selectedSource.id === source.id"
+                @click="selectSource(source.id)"
+              >
+                <code class="code">{{ source.label }}</code>
+                <span class="text">{{ source.language }}</span>
+              </button>
             </li>
           </ul>
         </section>
-      </div>
+
+        <section class="section -component-files">
+          <header class="header">
+            <div class="unit -heading">
+              <h2 class="title">Owned components</h2>
+              <p class="p">The 13 components used by this interface.</p>
+            </div>
+          </header>
+
+          <section
+            v-for="group in componentGroups"
+            :key="group.name"
+            class="section -group"
+          >
+            <header class="header">
+              <h3 class="title">{{ group.name }}</h3>
+              <span class="text">{{ group.components.length }}</span>
+            </header>
+            <ul class="list">
+              <li
+                v-for="component in group.components"
+                :key="component"
+                class="item"
+              >
+                <button
+                  class="button"
+                  type="button"
+                  :aria-pressed="selectedSource.id === primaryComponentSourceId(component)"
+                  @click="selectSource(primaryComponentSourceId(component))"
+                >
+                  <code class="code">{{ component }}.vue</code>
+                  <n-badge
+                    v-if="verifiedDefinitions.has(component)"
+                    label="Definition verified"
+                    tone="success"
+                  />
+                  <n-badge
+                    v-else
+                    label="Definition WIP"
+                    tone="neutral"
+                  />
+                </button>
+              </li>
+            </ul>
+          </section>
+        </section>
+      </aside>
+
+      <source-browser
+        :source="selectedSource"
+        :siblings="siblingSources"
+        @select="selectSource"
+      />
     </section>
   </main>
 </template>
@@ -133,14 +214,14 @@ const sourceColumns = [
     > .unit.-heading {
       max-inline-size: 38rem;
 
-      > .p.-eyebrow,
+      > .text.-eyebrow,
       > .p.-lede {
         color: var(--nagi-color-text-muted);
         font-size: var(--n-font-size-2);
       }
     }
 
-    > .link.-github {
+    > .link {
       flex: 0 0 auto;
       padding: var(--n-space-3) var(--n-space-5);
       border: var(--n-border-width-1) solid var(--nagi-color-border-muted);
@@ -167,51 +248,160 @@ const sourceColumns = [
     }
   }
 
-  > .n-card.-ownership {
+  > .n-card {
     border-color: var(--nagi-color-border-muted);
     border-radius: var(--n-radius-3);
     background: var(--nagi-color-surface);
     box-shadow: none;
   }
 
-  > .section.-sources {
+  > .section.-explorer {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(16rem, 0.58fr) minmax(0, 1.42fr);
     gap: var(--n-space-5);
+    align-items: start;
 
-    > .unit.-column {
+    > .aside {
       display: grid;
       gap: var(--n-space-5);
-      align-content: start;
+      min-inline-size: 0;
 
-      > .section.-group {
+      > .section.-page-files,
+      > .section.-component-files {
         overflow: hidden;
         border: var(--n-border-width-1) solid var(--nagi-color-border-muted);
         border-radius: var(--n-radius-3);
         background: var(--nagi-color-surface);
 
         > .header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
           padding: var(--n-space-5) var(--n-space-7);
           border-block-end: var(--n-border-width-1) solid var(--nagi-color-border-muted);
-        }
 
+          > .unit.-heading {
+            > .title {
+              margin: 0;
+              font-size: var(--n-font-size-5);
+              font-weight: 620;
+            }
+
+            > .p {
+              margin: var(--n-space-1) 0 0;
+              color: var(--nagi-color-text-muted);
+              font-size: var(--n-font-size-1);
+            }
+          }
+        }
+      }
+
+      > .section.-page-files {
         > .list {
           margin: 0;
           padding: 0;
           list-style: none;
 
           > .item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: var(--n-space-5) var(--n-space-7);
             border-block-end: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+
+            > .button {
+              display: flex;
+              inline-size: 100%;
+              align-items: center;
+              justify-content: space-between;
+              padding: var(--n-space-4) var(--n-space-7);
+              border: 0;
+              background: transparent;
+              color: var(--nagi-color-text);
+              font: inherit;
+              text-align: start;
+              cursor: pointer;
+
+              &[aria-pressed="true"] {
+                background: var(--nagi-color-surface-active);
+              }
+
+              &:focus-visible {
+                outline: none;
+                box-shadow: inset var(--nagi-shadow-focus);
+              }
+
+              > .code {
+                font-size: var(--n-font-size-2);
+              }
+
+              > .text {
+                color: var(--nagi-color-text-muted);
+                font-size: var(--n-font-size-1);
+              }
+            }
           }
         }
       }
+
+      > .section.-component-files {
+        > .section.-group {
+          > .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--n-space-4) var(--n-space-7);
+            border-block-end: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+            background: var(--nagi-color-surface-raised);
+
+            > .title {
+              margin: 0;
+              font-size: var(--n-font-size-3);
+              font-weight: 620;
+            }
+
+            > .text {
+              color: var(--nagi-color-text-muted);
+              font-size: var(--n-font-size-1);
+            }
+          }
+
+          > .list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+
+            > .item {
+              border-block-end: var(--n-border-width-1) solid var(--nagi-color-border-muted);
+
+              > .button {
+                display: flex;
+                inline-size: 100%;
+                align-items: center;
+                justify-content: space-between;
+                padding: var(--n-space-4) var(--n-space-7);
+                border: 0;
+                background: transparent;
+                color: var(--nagi-color-text);
+                font: inherit;
+                text-align: start;
+                cursor: pointer;
+
+                &[aria-pressed="true"] {
+                  background: var(--nagi-color-surface-active);
+                }
+
+                &:focus-visible {
+                  outline: none;
+                  box-shadow: inset var(--nagi-shadow-focus);
+                }
+
+                > .code {
+                  font-size: var(--n-font-size-2);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    > .deep-sea-source-browser {
+      position: sticky;
+      inset-block-start: var(--n-space-5);
     }
   }
 }
@@ -226,8 +416,14 @@ const sourceColumns = [
     }
 
     > .section.-counts,
-    > .section.-sources {
+    > .section.-explorer {
       grid-template-columns: 1fr;
+    }
+
+    > .section.-explorer {
+      > .deep-sea-source-browser {
+        position: static;
+      }
     }
   }
 }

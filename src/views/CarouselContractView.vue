@@ -23,10 +23,10 @@ const appVersion = __DEEP_SEA_VERSION__;
 <template>
   <main class="deep-sea-carousel-contract-view">
     <h1>Deep Sea Carousel contract fixture</h1>
-    <p class="p -motion-status">
+    <span class="text">
       v{{ appVersion }} · Motion policy:
       {{ reduceMotion ? "reduced by browser preference" : "animated" }}
-    </p>
+    </span>
 
     <n-carousel
       v-model="mainIndex"
@@ -125,7 +125,7 @@ const appVersion = __DEEP_SEA_VERSION__;
   max-inline-size: 48rem;
   padding: var(--nagi-space-surface-inset);
 
-  > .text.-motion-status {
+  > .text {
     margin: 0;
     color: var(--nagi-color-text-muted);
   }

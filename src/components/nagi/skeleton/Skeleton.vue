@@ -36,10 +36,4 @@ const skeletonProps = computed(() =>
     opacity: 0.55;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .n-skeleton {
-    animation: none;
-  }
-}
 </style>

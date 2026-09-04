@@ -1,7 +1,7 @@
 <!-- @nagi-source dialog/Dialog.vue@0.1.0 -->
 <script setup lang="ts">
-import { AnimatePresence, motion, useReducedMotion } from "motion-v";
-import { computed, ref, watch, type StyleValue } from "vue";
+import { AnimatePresence, motion, MotionConfig } from "motion-v";
+import { ref, useAttrs, watch } from "vue";
 
 import { useDialog, type DialogClosedBy } from "@nagi-labs/nagi-ui";
 
@@ -10,8 +10,6 @@ const props = withDefaults(
     triggerLabel: string;
     title: string;
     id?: string;
-    class?: string;
-    style?: StyleValue;
     description?: string;
     closeLabel?: string;
     modal?: boolean;
@@ -25,6 +23,7 @@ const props = withDefaults(
     forceMotionPreview: false,
   },
 );
+const attrs = useAttrs();
 defineOptions({ inheritAttrs: false });
 
 const requestedOpen = defineModel<boolean>("open", { default: false });
@@ -33,55 +32,40 @@ const surfacePresent = ref(requestedOpen.value);
 const dialog = useDialog(props, nativeOpen);
 const titleId = `${dialog.id}-title`;
 const descriptionId = `${dialog.id}-description`;
-const userPrefersReducedMotion = useReducedMotion();
-const reduceMotion = computed(
-  () => !props.forceMotionPreview && userPrefersReducedMotion.value,
-);
-const surfaceHiddenState = computed(() =>
-  reduceMotion.value
-    ? { opacity: 0 }
-    : {
-        opacity: 0,
-        filter: "blur(10px)",
-        z: -100,
-        rotateY: 25,
-        rotateX: 5,
-        transformPerspective: 500,
-      },
-);
-const surfaceEnterTransition = computed(() =>
-  reduceMotion.value
-    ? { duration: 0 }
-    : {
+const hiddenSurface = {
+  opacity: 0,
+  filter: "blur(10px)",
+  z: -100,
+  rotateY: 25,
+  rotateX: 5,
+  transformPerspective: 500,
+};
+const surfaceVariants = {
+  hidden: hiddenSurface,
+  visible: {
+    opacity: 1,
+    filter: "blur(0px)",
+    z: 0,
+    rotateY: 0,
+    rotateX: 0,
+    transition: {
+      delay: 0.2,
+      duration: 0.5,
+      ease: [0.17, 0.67, 0.51, 1] as const,
+      opacity: {
         delay: 0.2,
         duration: 0.5,
-        ease: [0.17, 0.67, 0.51, 1] as const,
-        opacity: {
-          delay: 0.2,
-          duration: 0.5,
-          ease: "easeOut" as const,
-        },
+        ease: "easeOut" as const,
       },
-);
-const surfaceExitTransition = computed(() =>
-  reduceMotion.value
-    ? { duration: 0 }
-    : { duration: 0.3, ease: [0.67, 0.17, 0.62, 0.64] as const },
-);
-const surfaceOpenState = computed(() => ({
-  opacity: 1,
-  filter: "blur(0px)",
-  z: 0,
-  rotateY: 0,
-  rotateX: 0,
-  transition: surfaceEnterTransition.value,
-}));
-const surfaceExitState = computed(() => ({
-  ...surfaceHiddenState.value,
-  transition: surfaceExitTransition.value,
-}));
-const triggerHoverState = computed(() => (reduceMotion.value ? undefined : { scale: 1.03 }));
-const triggerPressState = computed(() => (reduceMotion.value ? undefined : { scale: 0.97 }));
+    },
+  },
+  exiting: {
+    ...hiddenSurface,
+    transition: { duration: 0.3, ease: [0.67, 0.17, 0.62, 0.64] as const },
+  },
+};
+const triggerHoverState = { scale: 1.03 };
+const triggerPressState = { scale: 0.97 };
 const triggerTransition = { type: "spring" as const, stiffness: 500, damping: 30 };
 let closePending = false;
 
@@ -158,94 +142,98 @@ defineExpose({ show, close, toggle });
 
 <template>
   <div
+    v-bind="attrs"
+    :id="id"
     data-scope="dialog"
     data-part="root"
     class="n-dialog"
-    :id="id"
-    :class="props.class"
-    :style="props.style"
   >
-    <motion.button
-      data-scope="dialog"
-      data-part="trigger"
-      class="button -trigger"
-      type="button"
-      v-bind="triggerProps"
-      :while-hover="triggerHoverState"
-      :while-press="triggerPressState"
-      :transition="triggerTransition"
-    >
-      {{ triggerLabel }}
-    </motion.button>
-    <dialog
-      class="dialog"
-      data-scope="dialog"
-      data-part="surface"
-      :aria-labelledby="titleId"
-      :aria-describedby="description || $slots.description ? descriptionId : undefined"
-      :data-motion-policy="reduceMotion ? 'reduced' : 'animated'"
-      :data-motion-state="surfacePresent ? 'open' : 'closing'"
-      v-bind="dialog.dialogProps"
-      @cancel="handleCancel"
-    >
-      <AnimatePresence
-        :initial="false"
-        @exit-complete="finishSurfaceAnimation"
+    <motion-config :reduced-motion="forceMotionPreview ? 'never' : 'user'">
+      <motion.button
+        data-scope="dialog"
+        data-part="trigger"
+        class="button -trigger"
+        type="button"
+        v-bind="triggerProps"
+        :while-hover="triggerHoverState"
+        :while-press="triggerPressState"
+        :transition="triggerTransition"
       >
-        <motion.div
-          v-if="surfacePresent"
-          key="dialog-surface"
-          class="unit -surface"
-          data-motion-dialog-surface
-          :initial="surfaceHiddenState"
-          :animate="surfaceOpenState"
-          :exit="surfaceExitState"
+        {{ triggerLabel }}
+      </motion.button>
+      <dialog
+        class="dialog"
+        data-scope="dialog"
+        data-part="surface"
+        :aria-labelledby="titleId"
+        :aria-describedby="description || $slots.description ? descriptionId : undefined"
+        :data-motion-policy="forceMotionPreview ? 'animated' : 'user'"
+        :data-motion-state="surfacePresent ? 'open' : 'closing'"
+        v-bind="dialog.dialogProps"
+        @cancel="handleCancel"
+      >
+        <AnimatePresence
+          :initial="false"
+          @exit-complete="finishSurfaceAnimation"
         >
-          <header class="header">
-            <h2
-              data-scope="dialog"
-              data-part="title"
-              :id="titleId"
-              class="title"
-            >
-              <slot
-                name="title"
-                :title="title"
-                >{{ title }}</slot
+          <motion.div
+            v-if="surfacePresent"
+            key="dialog-surface"
+            class="unit -surface"
+            data-motion-dialog-surface
+            :variants="surfaceVariants"
+            initial="hidden"
+            animate="visible"
+            exit="exiting"
+          >
+            <header class="header">
+              <h2
+                :id="titleId"
+                data-scope="dialog"
+                data-part="title"
+                class="title"
               >
-            </h2>
-            <p
-              v-if="description || $slots.description"
-              data-scope="dialog"
-              data-part="description"
-              :id="descriptionId"
-              class="p"
-            >
-              <slot
-                name="description"
-                :description="description"
-                >{{ description }}</slot
+                <slot
+                  name="title"
+                  :title="title"
+                >
+                  {{ title }}
+                </slot>
+              </h2>
+              <p
+                v-if="description || $slots.description"
+                :id="descriptionId"
+                data-scope="dialog"
+                data-part="description"
+                class="p"
               >
-            </p>
-          </header>
-          <section class="section">
-            <slot />
-          </section>
-          <footer class="footer">
-            <slot name="actions" />
-            <button
-              data-scope="dialog"
-              data-part="close"
-              class="button -close"
-              type="button"
-              @click="handleCloseClick"
-            >
-              {{ closeLabel }}
-            </button>
-          </footer>
-        </motion.div>
-      </AnimatePresence>
-    </dialog>
+                <slot
+                  name="description"
+                  :description="description"
+                >
+                  {{ description }}
+                </slot>
+              </p>
+            </header>
+            <section class="section">
+              <slot />
+            </section>
+            <footer class="footer">
+              <slot name="actions" />
+              <button
+                data-scope="dialog"
+                data-part="close"
+                class="button -close"
+                type="button"
+                @click="handleCloseClick"
+              >
+                {{ closeLabel }}
+              </button>
+            </footer>
+          </motion.div>
+        </AnimatePresence>
+      </dialog>
+    </motion-config>
   </div>
 </template>
 

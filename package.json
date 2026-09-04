@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
-    "@nagi-labs/eslint-plugin-nagi-css": "^0.3.0",
+    "@nagi-labs/eslint-plugin-nagi-css": "0.4.0",
     "@playwright/test": "^1.62.1",
     "@types/node": "^24.13.3",
     "@typescript-eslint/parser": "^8.68.0",

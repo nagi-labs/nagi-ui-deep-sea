@@ -102,7 +102,7 @@ test("the initial route does not create transient horizontal overflow", async ({
       const metricTop = document
         .querySelector(".section.-metrics > .article")
         ?.getBoundingClientRect().top;
-      const sidebar = document.querySelector(".n-sidebar.-app")?.getBoundingClientRect();
+      const sidebar = document.querySelector(".n-sidebar")?.getBoundingClientRect();
       if (sidebar) {
         captureWindow.__sidebarGeometrySamples?.push([sidebar.left, sidebar.width, sidebar.height]);
       }
@@ -163,4 +163,32 @@ test("the owned source map exposes Definition status", async ({ page }) => {
   await expect(page.getByText("13", { exact: true })).toBeVisible();
   await expect(page.getByText("Definition verified").first()).toBeVisible();
   await expect(page.getByText("Definition WIP").first()).toBeVisible();
+});
+
+test("the source explorer shows the exact page and owned component files", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "View page source" }).click();
+
+  await expect(page).toHaveURL(/\/components\?source=page-dashboard-view$/u);
+  await expect(page.getByRole("heading", { level: 2, name: "DashboardView.vue" })).toBeVisible();
+  const sourceCode = page.getByLabel("DashboardView.vue source code");
+  await expect(sourceCode).toContainText('<main class="main"');
+  await expect(sourceCode).toContainText(".deep-sea-dashboard-view");
+
+  await page.getByRole("button", { name: /Button\.vue Definition verified/u }).click();
+  await expect(page.getByRole("heading", { level: 2, name: "Button.vue" })).toBeVisible();
+  await expect(page.getByLabel("Button.vue source code")).toContainText(
+    "@nagi-source button/Button.vue",
+  );
+
+  await page.getByRole("button", { name: "button.definition.ts", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 2, name: "button.definition.ts" })).toBeVisible();
+  await expect(page.getByLabel("button.definition.ts source code")).toContainText(
+    "buttonDefinition",
+  );
+
+  await page.getByRole("button", { name: /Toast\.vue Definition verified/u }).click();
+  await page.getByRole("button", { name: "useToastMotion.ts", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 2, name: "useToastMotion.ts" })).toBeVisible();
+  await expect(page.getByLabel("useToastMotion.ts source code")).toContainText("useToastMotion");
 });

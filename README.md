@@ -18,9 +18,10 @@ vp install
 vp dev
 ```
 
-The workspace exempts only the pinned `@nagi-labs/nagi-ui@0.1.1` release from
-the minimum-release-age gate so a fresh StackBlitz can install the release on
-publication day; every other dependency remains subject to the default policy.
+The workspace exempts the pinned `@nagi-labs/nagi-ui@0.1.1` package and the
+Nagi CSS `0.4.0` linter/core pair from the minimum-release-age gate so a fresh
+checkout can install newly published Nagi releases immediately; every other
+dependency remains subject to the default policy.
 Unovis pulls `maplibre-gl` into its dependency graph, but this line-chart sample
 does not use its map renderer, so that package's install script is explicitly
 disabled in `pnpm-workspace.yaml`.
@@ -39,9 +40,11 @@ installs still include the complete verification toolchain.
 
 ## 90-second Nagi CSS tour
 
-1. Open [`src/views/DashboardView.vue`](src/views/DashboardView.vue). Its semantic
-   template and scoped CSS live together, and each nested `>` step mirrors an
-   owned parent-child edge.
+1. Open the running Overview and choose **View page source**. The in-app source
+   explorer shows the exact `DashboardView.vue` used to render the page, rather
+   than a separately maintained example snippet. Its semantic template and
+   scoped CSS live together, and each nested `>` step mirrors an owned
+   parent-child edge.
 2. Open [`src/components/SignalQualityCard.vue`](src/components/SignalQualityCard.vue).
    Nagi Card and Button roots stay opaque while declared slot surfaces reopen
    the Deep Sea-owned content. Unovis remains an explicit third-party boundary.
@@ -57,6 +60,13 @@ installs still include the complete verification toolchain.
 The application intentionally has no catch-all global component stylesheet.
 Each visible surface owns its markup and scoped CSS; the theme file owns only
 shared design decisions and document-level defaults.
+
+The `/components` source explorer imports the application files and the complete
+`src/components/nagi` ownership baseline as raw build inputs. Page source,
+component templates, and available Definition files therefore stay synchronized
+with the deployed interface automatically. The route is loaded as a separate
+browser chunk so those source strings do not increase the Overview's initial
+JavaScript payload.
 
 ## Ownership baseline
 
@@ -128,12 +138,12 @@ closed visual states inside it. Close requests finish that visual exit before
 closing the native element, so Motion does not replace browser-owned behavior.
 
 Toast retains Nagi's manager, announcement, timer-pausing, and focus-repair
-behavior while presenting live notifications as a compact depth stack. The
-stack expands on hover or keyboard focus and animates insertion, reflow, and
-removal. Its motion vocabulary is independently implemented from the interaction
-demonstrated by Motion's
-[Vue stacked notifications example](https://motion.dev/examples/vue-toast-stack);
-the premium example source is not copied. The package Blueprint and Deep Sea
+behavior while presenting live notifications as a keyed vertical list.
+`AnimatePresence` owns enter/exit retention, `layout` animates the remaining
+items into place, and `useToastMotion.ts` contains only the native-popover exit
+handoff that Motion cannot own. This follows Motion's freely published
+[Vue AnimatePresence modes example](https://motion.dev/examples/vue-animate-presence-modes).
+The package Blueprint and Deep Sea
 stack now execute the same `nagi/toast@1` Contract, while insertion, stacking,
 retained exit DOM, and reflow remain in the Deep Sea Implementation Definition.
 

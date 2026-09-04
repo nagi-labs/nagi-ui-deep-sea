@@ -23,13 +23,13 @@ test("DashboardSkeleton covers the page until its minimum delay and Unovis rende
   await expect(skeleton).toBeVisible();
   await expect(dashboard).toBeHidden();
   const firstSkeleton = skeleton.locator(".n-skeleton").first();
-  const initialBackgroundPosition = await firstSkeleton.evaluate(
-    (element) => getComputedStyle(element).backgroundPosition,
+  const initialOpacity = await firstSkeleton.evaluate(
+    (element) => getComputedStyle(element).opacity,
   );
   await page.waitForTimeout(120);
   await expect
-    .poll(() => firstSkeleton.evaluate((element) => getComputedStyle(element).backgroundPosition))
-    .not.toBe(initialBackgroundPosition);
+    .poll(() => firstSkeleton.evaluate((element) => getComputedStyle(element).opacity))
+    .not.toBe(initialOpacity);
   expect(
     await dashboard.evaluate((element) =>
       getComputedStyle(element)

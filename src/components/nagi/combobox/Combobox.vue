@@ -8,8 +8,8 @@ export interface ComboboxOption {
 </script>
 
 <script setup lang="ts">
-import { motion, useReducedMotion } from "motion-v";
-import { computed, useId, type StyleValue } from "vue";
+import { motion, MotionConfig } from "motion-v";
+import { useAttrs, useId } from "vue";
 
 import { useCombobox } from "@nagi-labs/nagi-ui";
 
@@ -20,8 +20,6 @@ const props = withDefaults(
     label: string;
     items: readonly ComboboxOption[];
     id?: string;
-    class?: string;
-    style?: StyleValue;
     placeholder?: string;
     inputmode?: "none" | "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url";
     enterkeyhint?: "enter" | "done" | "go" | "next" | "previous" | "search" | "send";
@@ -70,6 +68,7 @@ const props = withDefaults(
     forceMotionPreview: false,
   },
 );
+const attrs = useAttrs();
 const emit = defineEmits<{
   input: [event: Event];
   compositionstart: [event: CompositionEvent];
@@ -85,41 +84,33 @@ const selected = defineModel<string | null>("selected", { default: null });
 const labelId = useId();
 const combobox = useCombobox(props, inputValue, selected);
 const { activeKey, open, visibleItems } = combobox;
-const userPrefersReducedMotion = useReducedMotion();
-const reduceMotion = computed(
-  () => !props.forceMotionPreview && userPrefersReducedMotion.value,
-);
-const popupState = computed(() =>
-  open.value
-    ? { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
-    : reduceMotion.value
-      ? { opacity: 0 }
-      : { opacity: 0, y: -16, scale: 0.94, filter: "blur(10px)" },
-);
-const popupTransition = computed(() =>
-  reduceMotion.value
-    ? { duration: 0 }
-    : { type: "spring" as const, visualDuration: 0.42, bounce: 0.16 },
-);
-const indicatorTransition = computed(() =>
-  reduceMotion.value
-    ? { duration: 0 }
-    : { type: "spring" as const, visualDuration: 0.34, bounce: 0.2 },
-);
+const popupVariants = {
+  closed: { opacity: 0, y: -16, scale: 0.94, filter: "blur(10px)" },
+  open: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
+};
+const popupTransition = {
+  type: "spring" as const,
+  visualDuration: 0.42,
+  bounce: 0.16,
+};
+const indicatorTransition = {
+  type: "spring" as const,
+  visualDuration: 0.34,
+  bounce: 0.2,
+};
 </script>
 
 <template>
   <div
+    v-bind="attrs"
     data-scope="combobox"
     data-part="root"
     class="n-combobox"
-    :class="props.class"
-    :style="props.style"
   >
     <label
+      :id="labelId"
       data-scope="combobox"
       data-part="label"
-      :id="labelId"
       class="label"
       :for="combobox.inputId"
       >{{ label }}</label
@@ -164,7 +155,7 @@ const indicatorTransition = computed(() =>
       />
       <button
         v-if="clearable && !disabled && !readOnly && (selected !== null || inputValue !== '')"
-        class="button -clear"
+        class="button"
         type="button"
         :aria-label="clearLabel"
         @click="combobox.clear"
@@ -189,54 +180,58 @@ const indicatorTransition = computed(() =>
       :aria-busy="loading ? 'true' : undefined"
       v-bind="combobox.popupProps"
     >
-      <motion.div
-        class="seg -surface"
-        data-motion-combobox-surface
-        :initial="false"
-        :animate="popupState"
-        :transition="popupTransition"
-      >
-        <ul
-          class="list"
-          data-scope="combobox"
-          data-part="listbox"
-          :aria-labelledby="labelId"
-          v-bind="combobox.listboxProps"
+      <motion-config :reduced-motion="forceMotionPreview ? 'never' : 'user'">
+        <motion.div
+          class="seg -surface"
+          data-motion-combobox-surface
+          :data-motion-policy="forceMotionPreview ? 'animated' : 'user'"
+          :initial="false"
+          :variants="popupVariants"
+          :animate="open ? 'open' : 'closed'"
+          :transition="popupTransition"
         >
-          <li
-            v-for="item in visibleItems"
-            :key="item.key"
-            class="item"
+          <ul
+            class="list"
             data-scope="combobox"
-            data-part="option"
-            v-bind="combobox.optionProps(item)"
+            data-part="listbox"
+            :aria-labelledby="labelId"
+            v-bind="combobox.listboxProps"
           >
-            <motion.span
-              v-if="activeKey === item.key"
-              class="fr -active-indicator"
-              data-motion-active-indicator
-              aria-hidden="true"
-              :layout-id="`${combobox.id}-active-indicator`"
-              :transition="indicatorTransition"
-            />
-            <span class="text">{{ item.label }}</span>
-          </li>
-        </ul>
-        <div
-          v-if="loading"
-          class="status"
-          role="status"
-        >
-          {{ loadingText }}
-        </div>
-        <div
-          v-else-if="visibleItems.length === 0"
-          class="status"
-          role="status"
-        >
-          {{ emptyText }}
-        </div>
-      </motion.div>
+            <li
+              v-for="item in visibleItems"
+              :key="item.key"
+              class="item"
+              data-scope="combobox"
+              data-part="option"
+              v-bind="combobox.optionProps(item)"
+            >
+              <motion.span
+                v-if="activeKey === item.key"
+                class="fr -active-indicator"
+                data-motion-active-indicator
+                aria-hidden="true"
+                :layout-id="`${combobox.id}-active-indicator`"
+                :transition="indicatorTransition"
+              />
+              <span class="text">{{ item.label }}</span>
+            </li>
+          </ul>
+          <div
+            v-if="loading"
+            class="status"
+            role="status"
+          >
+            {{ loadingText }}
+          </div>
+          <div
+            v-else-if="visibleItems.length === 0"
+            class="status"
+            role="status"
+          >
+            {{ emptyText }}
+          </div>
+        </motion.div>
+      </motion-config>
     </div>
   </div>
 </template>
@@ -296,18 +291,16 @@ const indicatorTransition = computed(() =>
       }
 
       > .button {
-        &.-clear {
-          position: absolute;
-          inset-block: 0;
-          inset-inline-end: 0.35rem;
-          inline-size: 1.75rem;
-          padding: 0;
-          border: 0;
-          background: transparent;
-          color: var(--nagi-color-text-muted);
-          font: inherit;
-          cursor: pointer;
-        }
+        position: absolute;
+        inset-block: 0;
+        inset-inline-end: 0.35rem;
+        inline-size: 1.75rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--nagi-color-text-muted);
+        font: inherit;
+        cursor: pointer;
       }
     }
 

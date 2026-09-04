@@ -15,11 +15,11 @@ const appVersion = __DEEP_SEA_VERSION__;
 <template>
   <div class="deep-sea-app">
     <n-sidebar
-      class="n-sidebar -app"
+      class="n-sidebar"
       label="Deep Sea operations"
     >
       <router-link
-        class="n-sidebar-content -identity"
+        class="n-sidebar-content"
         to="/"
         aria-label="Deep Sea command deck"
       >
@@ -43,7 +43,6 @@ const appVersion = __DEEP_SEA_VERSION__;
           custom
         >
           <n-sidebar-link
-            class="-app"
             :href="href"
             :current="isExactActive"
             :navigate="navigate"
@@ -54,7 +53,7 @@ const appVersion = __DEEP_SEA_VERSION__;
       </n-sidebar-section>
 
       <template #footer>
-        <div class="n-sidebar-footer -system-status">
+        <div class="n-sidebar-footer">
           <span
             class="icon"
             aria-hidden="true"
@@ -68,7 +67,7 @@ const appVersion = __DEEP_SEA_VERSION__;
     </n-sidebar>
 
     <div class="unit -frame">
-      <header class="header -mobile">
+      <header class="header">
         <router-link
           class="link -identity"
           to="/"
@@ -130,7 +129,7 @@ const appVersion = __DEEP_SEA_VERSION__;
   grid-template-columns: var(--local-sidebar-width) minmax(0, 1fr);
   min-block-size: 100svb;
 
-  > .n-sidebar.-app {
+  > .n-sidebar {
     position: sticky;
     inset-block-start: 0;
     z-index: var(--n-z-sticky);
@@ -139,7 +138,7 @@ const appVersion = __DEEP_SEA_VERSION__;
     border-color: var(--nagi-color-border-muted);
     background: var(--deep-sea-depth);
 
-    .n-sidebar-content.-identity {
+    .n-sidebar-content {
       display: flex;
       gap: var(--n-space-5);
       align-items: center;
@@ -181,7 +180,7 @@ const appVersion = __DEEP_SEA_VERSION__;
       }
     }
 
-    .n-sidebar-footer.-system-status {
+    .n-sidebar-footer {
       display: flex;
       gap: var(--n-space-4);
       align-items: center;
@@ -215,7 +214,7 @@ const appVersion = __DEEP_SEA_VERSION__;
   > .unit.-frame {
     min-inline-size: 0;
 
-    > .header.-mobile {
+    > .header {
       display: none;
     }
 
@@ -231,12 +230,12 @@ const appVersion = __DEEP_SEA_VERSION__;
   .deep-sea-app {
     grid-template-columns: 1fr;
 
-    > .n-sidebar.-app {
+    > .n-sidebar {
       display: none;
     }
 
     > .unit.-frame {
-      > .header.-mobile {
+      > .header {
         position: sticky;
         inset-block-start: 0;
         z-index: var(--n-z-sticky);

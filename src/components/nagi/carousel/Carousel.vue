@@ -11,9 +11,9 @@ export interface CarouselItem {
 
 <script setup lang="ts">
 import { AnimatePresence, motion, useReducedMotion } from "motion-v";
-import { computed, ref, watch, type StyleValue } from "vue";
+import { computed, ref, useAttrs, watch } from "vue";
 
-import { useCarousel } from "@nagi-labs/nagi-ui";
+import { mergeElementProps, useCarousel } from "@nagi-labs/nagi-ui";
 
 defineOptions({ inheritAttrs: false });
 
@@ -21,9 +21,6 @@ const props = withDefaults(
   defineProps<{
     items: readonly CarouselItem[];
     id?: string;
-    class?: string;
-    style?: StyleValue;
-    title?: string;
     label: string;
     carouselRoleDescription?: string;
     slideRoleDescription?: string;
@@ -47,6 +44,7 @@ const props = withDefaults(
     forceMotionPreview: false,
   },
 );
+const attrs = useAttrs();
 
 const index = defineModel<number>({ default: 0 });
 const carousel = useCarousel({
@@ -118,17 +116,18 @@ const slideTransition = computed(() =>
     ? { duration: 0 }
     : { duration: 0.32, ease: [0.4, 0, 0.2, 1] as const },
 );
+
+function resolveRootProps() {
+  return mergeElementProps(attrs, carousel.rootProps);
+}
 </script>
 
 <template>
   <section
-    v-bind="carousel.rootProps"
+    v-bind="resolveRootProps()"
     data-scope="carousel"
     data-part="root"
     class="n-carousel"
-    :class="props.class"
-    :style="props.style"
-    :title="props.title"
   >
     <div class="actions">
       <button
@@ -138,7 +137,7 @@ const slideTransition = computed(() =>
         ‹
       </button>
       <output
-        class="output -announcement"
+        class="output"
         role="status"
         aria-live="polite"
         aria-atomic="true"
@@ -169,7 +168,7 @@ const slideTransition = computed(() =>
           data-scope="carousel"
           data-part="slide"
           data-motion-slide=""
-          class="article -slide"
+          class="article"
           :custom="transitionDirection"
           :variants="slideVariants"
           initial="enter"
@@ -188,13 +187,13 @@ const slideTransition = computed(() =>
             class="title"
           >
             {{ currentSlide.item.label }}
-            <span class="text -position">
+            <span class="text">
               , {{ carousel.slidePosition(currentSlide.item, currentSlide.itemIndex) }}
             </span>
           </h2>
           <p
             v-if="currentSlide.item.description"
-            class="p -description"
+            class="p"
           >
             {{ currentSlide.item.description }}
           </p>
@@ -238,7 +237,7 @@ const slideTransition = computed(() =>
       }
     }
 
-    > .output.-announcement {
+    > .output {
       color: var(--nagi-color-text-muted);
       font-size: var(--nagi-font-size-label);
     }
@@ -249,7 +248,7 @@ const slideTransition = computed(() =>
     display: grid;
     overflow: clip;
 
-    > .article.-slide {
+    > .article {
       box-sizing: border-box;
       grid-area: 1 / 1;
       min-inline-size: 0;
@@ -270,7 +269,7 @@ const slideTransition = computed(() =>
         margin: 0;
         font-size: inherit;
 
-        > .text.-position {
+        > .text {
           position: absolute;
           inset: 0 auto auto 0;
           inline-size: 1px;
@@ -281,7 +280,7 @@ const slideTransition = computed(() =>
         }
       }
 
-      > .p.-description {
+      > .p {
         margin-block: var(--nagi-space-item-gap) 0;
         color: var(--nagi-color-text-muted);
       }

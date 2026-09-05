@@ -12,6 +12,7 @@ import { motion, MotionConfig } from "motion-v";
 import { useId, type StyleValue } from "vue";
 
 import { useDeepSeaCombobox } from "./useDeepSeaCombobox";
+import { useUserReducedMotion } from "../../../composables/useUserReducedMotion";
 
 defineOptions({ inheritAttrs: false });
 
@@ -85,6 +86,7 @@ const selected = defineModel<string | null>("selected", { default: null });
 const labelId = useId();
 const combobox = useDeepSeaCombobox(props, inputValue, selected);
 const { activeKey, open, visibleItems } = combobox;
+const userPrefersReducedMotion = useUserReducedMotion();
 </script>
 
 <template>
@@ -168,11 +170,13 @@ const { activeKey, open, visibleItems } = combobox;
       :aria-busy="loading ? 'true' : undefined"
       v-bind="combobox.popupProps"
     >
-      <motion-config :reduced-motion="forceMotionPreview ? 'never' : 'user'">
+      <motion-config
+        :reduced-motion="forceMotionPreview ? 'never' : userPrefersReducedMotion ? 'always' : 'never'"
+      >
         <motion.div
           class="seg -surface"
           data-motion-combobox-surface
-          :data-motion-policy="forceMotionPreview ? 'animated' : 'user'"
+          :data-motion-policy="forceMotionPreview ? 'animated' : userPrefersReducedMotion ? 'reduced' : 'animated'"
           :initial="false"
           :variants="combobox.popupVariants"
           :animate="open ? 'open' : 'closed'"

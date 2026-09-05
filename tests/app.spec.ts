@@ -23,7 +23,20 @@ test("the command deck is operable and accessible", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", { level: 1, name: "Network overview" })).toBeVisible();
+  await expect(page.getByText("Demo data · Pacific monitoring network")).toBeVisible();
   await expect(page.getByRole("table", { name: "Priority monitoring stations" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "View page source" })).toHaveAttribute(
+    "href",
+    "/components?source=page-dashboard-view",
+  );
+  await expect(page.getByRole("link", { name: "How Nagi CSS checks this" })).toHaveAttribute(
+    "href",
+    "https://nagi-labs.github.io/nagi-css/#test",
+  );
+  await expect(page.getByRole("link", { name: "Discuss ownership model" })).toHaveAttribute(
+    "href",
+    "https://github.com/nagi-labs/nagi-ui/issues/new?template=ownership-model-feedback.md",
+  );
 
   await page.getByRole("button", { name: "Create report" }).click();
   await expect(page.getByRole("dialog", { name: "Create network report" })).toBeVisible();
@@ -50,38 +63,31 @@ test("Sync data presents the Overview notification stack", async ({ page }) => {
   await expect(region).toContainText("Network synchronized");
 });
 
-test("the Overview Combobox keeps showcase motion when the browser requests reduction", async ({
+test("the Overview respects reduced motion while keeping core operations available", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.addInitScript(() => {
-    const captureWindow = window as Window & { __overviewComboboxDurations?: number[] };
-    const nativeAnimate = Element.prototype.animate;
-    captureWindow.__overviewComboboxDurations = [];
-    Element.prototype.animate = function captureOverviewComboboxMotion(keyframes, options) {
-      const animation = nativeAnimate.call(this, keyframes, options);
-      if (this.matches("[data-motion-combobox-surface]")) {
-        captureWindow.__overviewComboboxDurations?.push(
-          Number(animation.effect?.getTiming().duration ?? 0),
-        );
-      }
-      return animation;
-    };
-  });
   await page.goto("/");
   await page.getByRole("combobox", { name: "Find another station" }).click();
+  await expect(page.locator("[data-motion-combobox-surface]")).toHaveAttribute(
+    "data-motion-policy",
+    "reduced",
+  );
 
-  await expect
-    .poll(async () =>
-      (
-        await page.evaluate(
-          () =>
-            (window as Window & { __overviewComboboxDurations?: number[] })
-              .__overviewComboboxDurations ?? [],
-        )
-      ).some((duration) => duration > 20),
-    )
-    .toBe(true);
+  const trigger = page.getByRole("button", { name: "Create report" });
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: "Create network report" });
+  await expect(dialog).toHaveAttribute("data-motion-policy", "reduced");
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await page.getByRole("button", { name: "Sync data" }).click();
+  const stack = page.locator("[data-motion-toast-stack]");
+  await expect(stack).toHaveAttribute("data-motion-policy", "reduced");
+  await expect(page.getByRole("region", { name: "Network activity" })).toContainText(
+    "Network synchronized",
+  );
 });
 
 test("the initial route does not create transient horizontal overflow", async ({ page }) => {

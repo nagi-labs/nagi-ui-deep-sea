@@ -15,7 +15,7 @@ ownership baseline remains visible under
 
 ```sh
 vp install
-vp dev
+vp run dev
 ```
 
 The workspace exempts the pinned `@nagi-labs/nagi-ui@0.1.2` package and the
@@ -142,10 +142,12 @@ passes against the package and Deep Sea Implementations, but the Definition is
 still shown as WIP until disabled, read-only, boundary, IME, pointer, and
 controlled-state guarantees are added to the shared Contract.
 
-Deep Sea always enables motion on the Overview so its Implementation choices
-remain visible even when the browser requests reduced motion. This is a
-deliberate showcase policy; production adaptations should respect
-`prefers-reduced-motion`.
+The Overview respects `prefers-reduced-motion` by default. Its route, Dialog,
+Combobox, Toast, meter, loading, and chart motion stay within that inherited
+user policy while loading completion, dismissal, exit cleanup, and focus
+restoration remain functional. Dedicated Contract/Implementation routes may
+set `force-motion-preview` explicitly so one narrowly labelled test can inspect
+the full Motion path; that opt-in is not used by the public Overview.
 
 The shared Carousel, Combobox, Dialog, and Toast Contracts are executed from the
 packed Nagi package rather than copied into this repository. Their fixtures are
@@ -162,7 +164,18 @@ vp run lint
 vp run typecheck
 vp run audit:owned
 vp run test:browser
-vp build
+vp run build
+```
+
+CI builds, tests, and uploads the static `dist/` output as an artifact. A host
+using a repository subpath can build with, for example,
+`BASE_URL=/nagi-ui-deep-sea/ vp run build`. The Vite asset base and Vue Router
+history base use the same value.
+
+Preview a repository-subpath build with the same base value:
+
+```sh
+BASE_URL=/nagi-ui-deep-sea/ vp run preview
 ```
 
 The repository installs the public registry release

@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version: "24"
+          cache: true
+      - run: vp install --frozen-lockfile
+      - run: vp run format:check
+      - run: vp run lint
+      - run: vp run typecheck
+      - run: vp run audit:owned
+      - run: vp exec playwright install --with-deps chromium
+      - run: vp run test:browser
+      - name: Build static site
+        run: vp run build
+        env:
+          BASE_URL: /nagi-ui-deep-sea/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deep-sea-static-site
+          path: dist

@@ -109,7 +109,7 @@ export const motionDialogImplementation = defineComponentImplementation({
       name: "reduced-motion",
       value: "user-default-with-explicit-preview",
       description:
-        "Reduced motion removes spatial duration by default; the Deep Sea showcase may explicitly force the preview.",
+        "Reduced motion removes spatial duration by default; a dedicated verification fixture may explicitly force the preview.",
       evidence: [
         "src/components/nagi/dialog/Dialog.vue",
         "src/components/nagi/dialog/useDeepSeaDialog.ts",
@@ -143,7 +143,7 @@ export const motionDialogImplementation = defineComponentImplementation({
       id: "DEEP_SEA_DIALOG_IMPLEMENTATION_03",
       classification: "implementation-constraint",
       source: "Deep Sea dialog motion policy",
-      text: "The Deep Sea showcase explicitly forces the official Motion modal pattern's perspective, z-depth, rotateX, rotateY, opacity, and blur transition even when the browser requests reduced motion.",
+      text: "The dedicated Deep Sea verification fixture explicitly forces the official Motion modal pattern's perspective, z-depth, rotateX, rotateY, opacity, and blur transition even when the browser requests reduced motion.",
       evidence: ["tests/dialog.spec.ts"],
       origin: {
         kind: "nagi",

@@ -19,7 +19,9 @@ const routes = [
 
 export function createAppRouter(server = false) {
   return createRouter({
-    history: server ? createMemoryHistory() : createWebHistory(),
+    history: server
+      ? createMemoryHistory(import.meta.env.BASE_URL)
+      : createWebHistory(import.meta.env.BASE_URL),
     routes,
     scrollBehavior: () => ({ top: 0 }),
   });

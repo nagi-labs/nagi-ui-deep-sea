@@ -4,6 +4,7 @@ import { defineConfig } from "vite";
 import packageMetadata from "./package.json" with { type: "json" };
 
 export default defineConfig({
+  base: process.env.BASE_URL ?? "/",
   define: {
     __DEEP_SEA_VERSION__: JSON.stringify(packageMetadata.version),
   },

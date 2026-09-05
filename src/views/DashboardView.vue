@@ -89,7 +89,7 @@ onMounted(() => {
     >
       <header class="header -page">
         <div class="unit -heading">
-          <span class="text -eyebrow">Pacific monitoring network</span>
+          <span class="text -eyebrow">Demo data · Pacific monitoring network</span>
           <h1 class="title">Network overview</h1>
           <span class="text -lede">Station health, signal quality, and scheduled transfers.</span>
         </div>
@@ -100,6 +100,18 @@ onMounted(() => {
           >
             View page source
           </router-link>
+          <a
+            class="link"
+            href="https://nagi-labs.github.io/nagi-css/#test"
+          >
+            How Nagi CSS checks this
+          </a>
+          <a
+            class="link"
+            href="https://github.com/nagi-labs/nagi-ui/issues/new?template=ownership-model-feedback.md"
+          >
+            Discuss ownership model
+          </a>
           <n-button
             class="-sync n-button"
             :disabled="syncing"
@@ -119,7 +131,6 @@ onMounted(() => {
           <n-dialog
             v-model:open="dialogOpen"
             class="n-dialog"
-            force-motion-preview
             trigger-label="Create report"
             title="Create network report"
             description="Export the current operational snapshot for the handover log."
@@ -198,7 +209,6 @@ onMounted(() => {
             :items="stationOptions"
             placeholder="Search all stations"
             clearable
-            force-motion-preview
           />
 
           <div class="unit -meters">
@@ -285,7 +295,6 @@ onMounted(() => {
       <n-toast
         :manager="toastManager"
         label="Network activity"
-        force-motion-preview
       />
     </main>
 

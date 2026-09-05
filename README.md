@@ -167,8 +167,10 @@ vp run test:browser
 vp run build
 ```
 
-CI builds, tests, and uploads the static `dist/` output as an artifact. A host
-using a repository subpath can build with, for example,
+CI builds, tests, and uploads the static `dist/` output as an artifact. The
+Pages workflow builds the same output after a push to `main` or a manual run;
+the repository must have Pages configured to use GitHub Actions. A host using
+a repository subpath can build with, for example,
 `BASE_URL=/nagi-ui-deep-sea/ vp run build`. The Vite asset base and Vue Router
 history base use the same value.
 

@@ -1,5 +1,6 @@
 import { createMemoryHistory, createRouter, createWebHistory } from "vue-router";
 
+import ButtonContractView from "./views/ButtonContractView.vue";
 import ComboboxContractView from "./views/ComboboxContractView.vue";
 import CarouselContractView from "./views/CarouselContractView.vue";
 import DashboardView from "./views/DashboardView.vue";
@@ -9,6 +10,7 @@ import ToastContractView from "./views/ToastContractView.vue";
 const routes = [
   { path: "/", component: DashboardView },
   { path: "/components", component: () => import("./views/ComponentSourceView.vue") },
+  { path: "/button-contract", component: ButtonContractView },
   { path: "/carousel-contract", component: CarouselContractView },
   { path: "/combobox-contract", component: ComboboxContractView },
   { path: "/dialog-contract", component: DialogContractView },

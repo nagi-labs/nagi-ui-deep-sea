@@ -1,4 +1,0 @@
-{
-  "installDependencies": false,
-  "startCommand": "corepack pnpm install --prod --frozen-lockfile && ./node_modules/.bin/vite --host 0.0.0.0"
-}

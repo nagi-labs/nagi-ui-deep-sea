@@ -1,4 +1,4 @@
-<!-- @nagi-source sidebar/Sidebar.vue@0.1.0 -->
+<!-- @nagi-source sidebar/Sidebar.vue@0.1.1 -->
 <script setup lang="ts">
 import { mergeElementProps } from "@nagi-labs/nagi-ui";
 import { computed, useAttrs, useSlots } from "vue";

@@ -208,8 +208,8 @@ importers:
   .:
     dependencies:
       '@nagi-labs/nagi-ui':
-        specifier: file:.local-packages/nagi-labs-nagi-ui-0.1.1.tgz
-        version: file:.local-packages/nagi-labs-nagi-ui-0.1.1.tgz(@playwright/test@1.62.1)(vue@3.5.42(typescript@6.0.3))
+        specifier: 0.1.2
+        version: 0.1.2(@playwright/test@1.62.1)(vue@3.5.42(typescript@6.0.3))
       '@unovis/ts':
         specifier: ^1.6.7
         version: 1.6.7
@@ -484,9 +484,8 @@ packages:
     resolution: {integrity: sha512-UndjRd2JEHC8ubbdfOc/oEAIv+9E97PIPxGpfUVECS5IfLHXGfqN46eOrec2CGBksLvz79nNM6PAYspCOasnwg==}
     engines: {node: '>=22.18.0'}
 
-  '@nagi-labs/nagi-ui@file:.local-packages/nagi-labs-nagi-ui-0.1.1.tgz':
-    resolution: {integrity: sha512-NAy1hY5mC1HJbLeep44+miuOfxp7sz/lCOT/T172uL/ZiQwy8rQ5VvV5RKRm8IMOX7GZfQ0wz72OqWPzY4RRqQ==, tarball: file:.local-packages/nagi-labs-nagi-ui-0.1.1.tgz}
-    version: 0.1.1
+  '@nagi-labs/nagi-ui@0.1.2':
+    resolution: {integrity: sha512-1/PnZoc43UQRT1YDbNSdlFbflVgjjVRODJXe+NkeqdwjH4dmhFuag0PvSwkKmu/XMMrILnUrcbehWsZ5vwK2ZQ==}
     engines: {node: '>=22.18.0'}
     hasBin: true
     peerDependencies:
@@ -3406,7 +3405,7 @@ snapshots:
       - eslint
       - supports-color
 
-  '@nagi-labs/nagi-ui@file:.local-packages/nagi-labs-nagi-ui-0.1.1.tgz(@playwright/test@1.62.1)(vue@3.5.42(typescript@6.0.3))':
+  '@nagi-labs/nagi-ui@0.1.2(@playwright/test@1.62.1)(vue@3.5.42(typescript@6.0.3))':
     dependencies:
       '@floating-ui/dom': 1.8.0
       '@internationalized/date': 3.12.4

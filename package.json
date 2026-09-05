@@ -16,7 +16,7 @@
     "test:browser": "playwright test"
   },
   "dependencies": {
-    "@nagi-labs/nagi-ui": "file:.local-packages/nagi-labs-nagi-ui-0.1.1.tgz",
+    "@nagi-labs/nagi-ui": "0.1.2",
     "@unovis/ts": "^1.6.7",
     "@unovis/vue": "^1.6.7",
     "@vitejs/plugin-vue": "^6.0.8",

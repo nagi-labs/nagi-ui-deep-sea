@@ -1,15 +1,18 @@
-<!-- @nagi-source dialog/Dialog.vue@0.1.0 -->
+<!-- @deep-sea-source dialog/Dialog.vue@1 -->
 <script setup lang="ts">
 import { AnimatePresence, motion, MotionConfig } from "motion-v";
-import { ref, useAttrs, watch } from "vue";
+import type { StyleValue } from "vue";
 
-import { useDialog, type DialogClosedBy } from "@nagi-labs/nagi-ui";
+import { type DialogClosedBy } from "@nagi-labs/nagi-ui";
+import { useDeepSeaDialog } from "./useDeepSeaDialog";
 
 const props = withDefaults(
   defineProps<{
     triggerLabel: string;
     title: string;
     id?: string;
+    class?: string;
+    style?: StyleValue;
     description?: string;
     closeLabel?: string;
     modal?: boolean;
@@ -23,127 +26,19 @@ const props = withDefaults(
     forceMotionPreview: false,
   },
 );
-const attrs = useAttrs();
 defineOptions({ inheritAttrs: false });
 
 const requestedOpen = defineModel<boolean>("open", { default: false });
-const nativeOpen = ref(requestedOpen.value);
-const surfacePresent = ref(requestedOpen.value);
-const dialog = useDialog(props, nativeOpen);
-const titleId = `${dialog.id}-title`;
-const descriptionId = `${dialog.id}-description`;
-const hiddenSurface = {
-  opacity: 0,
-  filter: "blur(10px)",
-  z: -100,
-  rotateY: 25,
-  rotateX: 5,
-  transformPerspective: 500,
-};
-const surfaceVariants = {
-  hidden: hiddenSurface,
-  visible: {
-    opacity: 1,
-    filter: "blur(0px)",
-    z: 0,
-    rotateY: 0,
-    rotateX: 0,
-    transition: {
-      delay: 0.2,
-      duration: 0.5,
-      ease: [0.17, 0.67, 0.51, 1] as const,
-      opacity: {
-        delay: 0.2,
-        duration: 0.5,
-        ease: "easeOut" as const,
-      },
-    },
-  },
-  exiting: {
-    ...hiddenSurface,
-    transition: { duration: 0.3, ease: [0.67, 0.17, 0.62, 0.64] as const },
-  },
-};
-const triggerHoverState = { scale: 1.03 };
-const triggerPressState = { scale: 0.97 };
-const triggerTransition = { type: "spring" as const, stiffness: 500, damping: 30 };
-let closePending = false;
+const dialog = useDeepSeaDialog(props, requestedOpen);
 
-function show() {
-  requestedOpen.value = true;
-}
-
-function close() {
-  requestedOpen.value = false;
-}
-
-function toggle() {
-  if (requestedOpen.value) close();
-  else show();
-}
-
-function handleTriggerClick(event: MouseEvent) {
-  event.preventDefault();
-  show();
-}
-
-function handleCloseClick(event: MouseEvent) {
-  event.preventDefault();
-  close();
-}
-
-function handleCancel(event: Event) {
-  event.preventDefault();
-  close();
-}
-
-function reconcileRequestedOpen(nextOpen: boolean) {
-  if (nextOpen) {
-    closePending = false;
-    nativeOpen.value = true;
-    surfacePresent.value = true;
-    return;
-  }
-
-  if (!nativeOpen.value) {
-    surfacePresent.value = false;
-    return;
-  }
-
-  closePending = true;
-  surfacePresent.value = false;
-}
-
-function reconcileNativeOpen(nextOpen: boolean) {
-  if (nextOpen) return;
-
-  closePending = false;
-  surfacePresent.value = false;
-  if (requestedOpen.value) requestedOpen.value = false;
-}
-
-function finishSurfaceAnimation() {
-  if (!closePending || requestedOpen.value || surfacePresent.value) return;
-
-  closePending = false;
-  nativeOpen.value = false;
-}
-
-const triggerProps = {
-  ...dialog.triggerProps,
-  onClick: handleTriggerClick,
-};
-
-watch(requestedOpen, reconcileRequestedOpen, { flush: "sync" });
-watch(nativeOpen, reconcileNativeOpen, { flush: "sync" });
-
-defineExpose({ show, close, toggle });
+defineExpose({ show: dialog.show, close: dialog.close, toggle: dialog.toggle });
 </script>
 
 <template>
   <div
-    v-bind="attrs"
     :id="id"
+    :class="props.class"
+    :style="props.style"
     data-scope="dialog"
     data-part="root"
     class="n-dialog"
@@ -154,10 +49,10 @@ defineExpose({ show, close, toggle });
         data-part="trigger"
         class="button -trigger"
         type="button"
-        v-bind="triggerProps"
-        :while-hover="triggerHoverState"
-        :while-press="triggerPressState"
-        :transition="triggerTransition"
+        v-bind="dialog.triggerProps"
+        :while-hover="dialog.triggerHoverState"
+        :while-press="dialog.triggerPressState"
+        :transition="dialog.triggerTransition"
       >
         {{ triggerLabel }}
       </motion.button>
@@ -165,30 +60,29 @@ defineExpose({ show, close, toggle });
         class="dialog"
         data-scope="dialog"
         data-part="surface"
-        :aria-labelledby="titleId"
-        :aria-describedby="description || $slots.description ? descriptionId : undefined"
+        :aria-labelledby="dialog.titleId"
+        :aria-describedby="description || $slots.description ? dialog.descriptionId : undefined"
         :data-motion-policy="forceMotionPreview ? 'animated' : 'user'"
-        :data-motion-state="surfacePresent ? 'open' : 'closing'"
+        :data-motion-state="dialog.surfacePresent.value ? 'open' : 'closing'"
         v-bind="dialog.dialogProps"
-        @cancel="handleCancel"
       >
         <AnimatePresence
           :initial="false"
-          @exit-complete="finishSurfaceAnimation"
+          @exit-complete="dialog.finishSurfaceAnimation"
         >
           <motion.div
-            v-if="surfacePresent"
+            v-if="dialog.surfacePresent.value"
             key="dialog-surface"
             class="unit -surface"
             data-motion-dialog-surface
-            :variants="surfaceVariants"
+            :variants="dialog.surfaceVariants"
             initial="hidden"
             animate="visible"
             exit="exiting"
           >
             <header class="header">
               <h2
-                :id="titleId"
+                :id="dialog.titleId"
                 data-scope="dialog"
                 data-part="title"
                 class="title"
@@ -200,20 +94,20 @@ defineExpose({ show, close, toggle });
                   {{ title }}
                 </slot>
               </h2>
-              <p
+              <div
                 v-if="description || $slots.description"
-                :id="descriptionId"
+                :id="dialog.descriptionId"
                 data-scope="dialog"
                 data-part="description"
-                class="p"
+                class="seg -description"
               >
                 <slot
                   name="description"
                   :description="description"
                 >
-                  {{ description }}
+                  <span class="text">{{ description }}</span>
                 </slot>
-              </p>
+              </div>
             </header>
             <section class="section">
               <slot />
@@ -225,7 +119,7 @@ defineExpose({ show, close, toggle });
                 data-part="close"
                 class="button -close"
                 type="button"
-                @click="handleCloseClick"
+                @click="dialog.close"
               >
                 {{ closeLabel }}
               </button>
@@ -310,7 +204,7 @@ defineExpose({ show, close, toggle });
           font-size: var(--n-font-size-5);
         }
 
-        > .p {
+        > .unit.-description {
           margin-block: var(--n-space-3) 0;
           color: var(--nagi-color-text-muted);
           font-size: var(--n-font-size-3);

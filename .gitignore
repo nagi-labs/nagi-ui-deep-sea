@@ -13,7 +13,6 @@ dist-ssr
 playwright-report
 test-results
 *.local
-.local-packages/nagi-ui-current.tgz
 
 # Editor directories and files
 .vscode/*

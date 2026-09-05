@@ -19,7 +19,7 @@ function saveHandover() {
       title="Deep Sea handover"
       description="Review the operational handover before saving it."
     >
-      <p>The handover contains the current station status.</p>
+      <span>The handover contains the current station status.</span>
       <template #actions>
         <n-button @click="saveHandover">Save handover</n-button>
       </template>

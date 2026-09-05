@@ -37,7 +37,7 @@ export const motionToastImplementation = defineComponentImplementation({
         "The Nagi renderer continues to own top-layer promotion and F6 routing through one native manual popover.",
       evidence: [
         "src/components/nagi/toast/Toast.vue",
-        "src/components/nagi/toast/useToastMotion.ts",
+        "src/components/nagi/toast/useDeepSeaToast.ts",
         "tests/toast.spec.ts",
       ],
     },
@@ -48,7 +48,7 @@ export const motionToastImplementation = defineComponentImplementation({
         "AnimatePresence retains removed notification DOM only for its visual exit; manager state remains authoritative.",
       evidence: [
         "src/components/nagi/toast/Toast.vue",
-        "src/components/nagi/toast/useToastMotion.ts",
+        "src/components/nagi/toast/useDeepSeaToast.ts",
         "tests/toast.spec.ts",
       ],
     },
@@ -59,7 +59,7 @@ export const motionToastImplementation = defineComponentImplementation({
         "Each notification is a keyed layout item; popLayout removes exiting items from flow while the remaining items reflow.",
       evidence: [
         "src/components/nagi/toast/Toast.vue",
-        "src/components/nagi/toast/useToastMotion.ts",
+        "src/components/nagi/toast/useDeepSeaToast.ts",
         "tests/toast.spec.ts",
       ],
     },

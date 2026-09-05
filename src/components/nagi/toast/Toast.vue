@@ -1,17 +1,19 @@
-<!-- @nagi-source toast/Toast.vue@0.1.0 -->
+<!-- @deep-sea-source toast/Toast.vue@1 -->
 <script setup lang="ts">
 import { AnimatePresence, motion, MotionConfig } from "motion-v";
-import { useAttrs } from "vue";
+import type { StyleValue } from "vue";
 
-import { type ToastItem, type ToastManager } from "@nagi-labs/nagi-ui";
-import { useToastRenderer } from "@nagi-labs/nagi-ui/component-controls";
-import { useToastMotion } from "./useToastMotion";
+import { type ToastManager } from "@nagi-labs/nagi-ui";
+import { useDeepSeaToast } from "./useDeepSeaToast";
 
 defineOptions({ inheritAttrs: false });
 
 const props = withDefaults(
   defineProps<{
     id?: string;
+    class?: string;
+    style?: StyleValue;
+    title?: string;
     manager?: ToastManager;
     duration?: number;
     limit?: number;
@@ -27,14 +29,7 @@ const props = withDefaults(
     forceMotionPreview: false,
   },
 );
-const attrs = useAttrs();
-
-const notifier = useToastRenderer(props);
-const toastMotion = useToastMotion({
-  regionElement: notifier.regionElement,
-  toasts: notifier.toasts,
-});
-const { visibleToasts } = toastMotion;
+const notifier = useDeepSeaToast(props);
 const toastTransition = {
   type: "spring" as const,
   visualDuration: 0.36,
@@ -43,18 +38,6 @@ const toastTransition = {
 const toastInitial = { opacity: 0, x: 48, scale: 0.96 };
 const toastVisible = { opacity: 1, x: 0, scale: 1 };
 const toastExit = { opacity: 0, x: 48, scale: 0.96 };
-
-function announcement(item: ToastItem) {
-  return [item.title, item.description].filter(Boolean).join(". ");
-}
-
-function runAction(item: ToastItem) {
-  return item.action?.onClick(item.id);
-}
-
-function dismiss(itemId: string) {
-  notifier.close(itemId);
-}
 
 defineExpose({
   manager: notifier.manager,
@@ -69,8 +52,10 @@ defineExpose({
 
 <template>
   <div
-    v-bind="attrs"
     class="n-toast"
+    :class="props.class"
+    :style="props.style"
+    :title="props.title"
   >
     <div class="unit -announcements">
       <span
@@ -80,7 +65,7 @@ defineExpose({
         :role="item.priority === 'assertive' ? 'alert' : 'status'"
         aria-atomic="true"
       >
-        {{ announcement(item) }}
+        {{ notifier.announcementText(item) }}
       </span>
     </div>
 
@@ -99,10 +84,10 @@ defineExpose({
           <AnimatePresence
             mode="popLayout"
             :initial="false"
-            @exit-complete="toastMotion.finishExit"
+            @exit-complete="notifier.finishExit"
           >
             <motion.li
-              v-for="item in visibleToasts"
+              v-for="item in notifier.visibleToasts.value"
               :key="item.id"
               class="item"
               :data-tone="item.tone"
@@ -120,18 +105,18 @@ defineExpose({
               >
                 {{ item.title }}
               </strong>
-              <p
+              <span
                 v-if="item.description"
-                class="p"
+                class="text"
               >
                 {{ item.description }}
-              </p>
+              </span>
               <div class="actions">
                 <button
                   v-if="item.action"
+                  v-bind="notifier.actionProps(item)"
                   class="button -action"
                   type="button"
-                  @click="runAction(item)"
                 >
                   {{ item.action.label }}
                 </button>
@@ -139,7 +124,7 @@ defineExpose({
                   class="button -dismiss"
                   type="button"
                   :aria-label="dismissLabel"
-                  @click="dismiss(item.id)"
+                  @click="notifier.close(item.id)"
                 >
                   ×
                 </button>
@@ -203,7 +188,7 @@ defineExpose({
           font-weight: 750;
         }
 
-        > .p {
+        > .text {
           grid-column: 1;
           min-inline-size: 0;
           margin: 0;

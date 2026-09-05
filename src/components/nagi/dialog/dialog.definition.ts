@@ -1,4 +1,4 @@
-// @nagi-source dialog/dialog.definition.ts@0.1.0
+// @deep-sea-source dialog/dialog.definition.ts@1
 import {
   adoptRequirementSet,
   defineComponentDefinition,
@@ -88,21 +88,33 @@ export const motionDialogImplementation = defineComponentImplementation({
       value: "native-dialog",
       description:
         "The native dialog remains the top-layer, modality, focus, and close-event owner.",
-      evidence: ["src/components/nagi/dialog/Dialog.vue", "tests/dialog.spec.ts"],
+      evidence: [
+        "src/components/nagi/dialog/Dialog.vue",
+        "src/components/nagi/dialog/useDeepSeaDialog.ts",
+        "tests/dialog.spec.ts",
+      ],
     },
     {
       name: "presence",
       value: "animate-presence-surface-inside-held-native-dialog",
       description:
         "AnimatePresence enters and removes the Motion surface while the native dialog remains mounted until exit completes.",
-      evidence: ["src/components/nagi/dialog/Dialog.vue", "tests/dialog.spec.ts"],
+      evidence: [
+        "src/components/nagi/dialog/Dialog.vue",
+        "src/components/nagi/dialog/useDeepSeaDialog.ts",
+        "tests/dialog.spec.ts",
+      ],
     },
     {
       name: "reduced-motion",
       value: "user-default-with-explicit-preview",
       description:
         "Reduced motion removes spatial duration by default; the Deep Sea showcase may explicitly force the preview.",
-      evidence: ["src/components/nagi/dialog/Dialog.vue", "tests/dialog.spec.ts"],
+      evidence: [
+        "src/components/nagi/dialog/Dialog.vue",
+        "src/components/nagi/dialog/useDeepSeaDialog.ts",
+        "tests/dialog.spec.ts",
+      ],
     },
   ],
   anatomy: [

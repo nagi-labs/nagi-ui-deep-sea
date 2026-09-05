@@ -1,8 +1,8 @@
-<!-- @nagi-source button/Button.vue@0.1.0 -->
+<!-- @deep-sea-source button/Button.vue@1 -->
 <script setup lang="ts">
-import { useButton } from "@nagi-labs/nagi-ui/component-controls";
-import { mergeElementProps, withoutClassToken } from "@nagi-labs/nagi-ui";
-import { computed, useAttrs } from "vue";
+import { useAttrs } from "vue";
+
+import { useDeepSeaButton } from "./useDeepSeaButton";
 
 defineOptions({ inheritAttrs: false });
 
@@ -20,17 +20,7 @@ const props = withDefaults(
   },
 );
 
-const attrs = useAttrs();
-
-const button = useButton(props);
-
-const buttonProps = computed(() =>
-  mergeElementProps(
-    button.buttonProps,
-    { ...attrs, class: withoutClassToken(attrs.class, "n-button") },
-    { type: props.type },
-  ),
-);
+const button = useDeepSeaButton(props, useAttrs());
 
 const emit = defineEmits<{
   blur: [event: FocusEvent];
@@ -45,7 +35,7 @@ const emit = defineEmits<{
 <template>
   <button
     class="n-button"
-    v-bind="buttonProps"
+    v-bind="button.buttonProps"
     data-scope="button"
     data-part="root"
     @blur="emit('blur', $event)"

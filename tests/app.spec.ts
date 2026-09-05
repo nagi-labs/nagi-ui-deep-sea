@@ -1,5 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+import { testedContractEvidence } from "../src/data/components";
 
 test("the overview is prerendered and hydrates without a mismatch", async ({ page, request }) => {
   const response = await request.get("/");
@@ -154,15 +158,22 @@ test("the initial route does not create transient horizontal overflow", async ({
   expect(new Set(sidebarGeometrySamples.map((sample) => sample.join(","))).size).toBe(1);
 });
 
-test("the owned source map exposes Definition status", async ({ page }) => {
+test("the owned source map exposes Contract test status", async ({ page }) => {
   await page.goto("/components");
 
   await expect(
     page.getByRole("heading", { level: 1, name: "Owned component source" }),
   ).toBeVisible();
   await expect(page.getByText("13", { exact: true })).toBeVisible();
-  await expect(page.getByText("Definition verified").first()).toBeVisible();
+  await expect(page.getByText("Contract tested").first()).toBeVisible();
   await expect(page.getByText("Definition WIP").first()).toBeVisible();
+});
+
+test("every Contract tested label points to a registered shared runner", () => {
+  for (const evidence of Object.values(testedContractEvidence)) {
+    const source = readFileSync(resolve(evidence.test), "utf8");
+    expect(source).toContain(`${evidence.runner}({`);
+  }
 });
 
 test("the source explorer shows the exact page and owned component files", async ({ page }) => {
@@ -175,10 +186,10 @@ test("the source explorer shows the exact page and owned component files", async
   await expect(sourceCode).toContainText('<main class="main"');
   await expect(sourceCode).toContainText(".deep-sea-dashboard-view");
 
-  await page.getByRole("button", { name: /Button\.vue Definition verified/u }).click();
+  await page.getByRole("button", { name: /Button\.vue Contract tested/u }).click();
   await expect(page.getByRole("heading", { level: 2, name: "Button.vue" })).toBeVisible();
   await expect(page.getByLabel("Button.vue source code")).toContainText(
-    "@nagi-source button/Button.vue",
+    "@deep-sea-source button/Button.vue",
   );
 
   await page.getByRole("button", { name: "button.definition.ts", exact: true }).click();
@@ -187,8 +198,8 @@ test("the source explorer shows the exact page and owned component files", async
     "buttonDefinition",
   );
 
-  await page.getByRole("button", { name: /Toast\.vue Definition verified/u }).click();
-  await page.getByRole("button", { name: "useToastMotion.ts", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 2, name: "useToastMotion.ts" })).toBeVisible();
-  await expect(page.getByLabel("useToastMotion.ts source code")).toContainText("useToastMotion");
+  await page.getByRole("button", { name: /Toast\.vue Contract tested/u }).click();
+  await page.getByRole("button", { name: "useDeepSeaToast.ts", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 2, name: "useDeepSeaToast.ts" })).toBeVisible();
+  await expect(page.getByLabel("useDeepSeaToast.ts source code")).toContainText("useDeepSeaToast");
 });

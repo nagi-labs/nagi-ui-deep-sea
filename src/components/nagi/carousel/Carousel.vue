@@ -1,4 +1,4 @@
-<!-- @nagi-source carousel/Carousel.vue@0.1.0 -->
+<!-- @deep-sea-source carousel/Carousel.vue@1 -->
 <script lang="ts">
 export interface CarouselItem {
   key: string;
@@ -10,10 +10,10 @@ export interface CarouselItem {
 </script>
 
 <script setup lang="ts">
-import { AnimatePresence, motion, useReducedMotion } from "motion-v";
-import { computed, ref, useAttrs, watch } from "vue";
+import { AnimatePresence, motion } from "motion-v";
+import type { StyleValue } from "vue";
 
-import { mergeElementProps, useCarousel } from "@nagi-labs/nagi-ui";
+import { useDeepSeaCarousel } from "./useDeepSeaCarousel";
 
 defineOptions({ inheritAttrs: false });
 
@@ -21,8 +21,13 @@ const props = withDefaults(
   defineProps<{
     items: readonly CarouselItem[];
     id?: string;
+    class?: string;
+    style?: StyleValue;
+    title?: string;
     label: string;
+    slidesLabel?: string;
     carouselRoleDescription?: string;
+    slidesRoleDescription?: string;
     slideRoleDescription?: string;
     landmark?: boolean;
     previousLabel?: string;
@@ -36,6 +41,7 @@ const props = withDefaults(
   {
     landmark: false,
     carouselRoleDescription: "carousel",
+    slidesRoleDescription: "slides",
     slideRoleDescription: "slide",
     previousLabel: "Previous slide",
     nextLabel: "Next slide",
@@ -44,90 +50,20 @@ const props = withDefaults(
     forceMotionPreview: false,
   },
 );
-const attrs = useAttrs();
 
 const index = defineModel<number>({ default: 0 });
-const carousel = useCarousel({
-  items: () => props.items,
-  index,
-  label: () => props.label,
-  carouselRoleDescription: () => props.carouselRoleDescription,
-  slideRoleDescription: () => props.slideRoleDescription,
-  landmark: () => props.landmark,
-  previousLabel: () => props.previousLabel,
-  nextLabel: () => props.nextLabel,
-  formatAnnouncement: props.formatAnnouncement,
-  formatSlideLabel: props.formatSlideLabel,
-  loop: () => props.loop,
-  disabled: () => props.disabled,
-  id: props.id,
-});
-const userPrefersReducedMotion = useReducedMotion();
-const reduceMotion = computed(
-  () => !props.forceMotionPreview && userPrefersReducedMotion.value,
-);
-const currentSlide = computed(() => {
-  const itemIndex = carousel.currentIndex.value;
-  const item = props.items[itemIndex];
-  return item ? { item, itemIndex } : null;
-});
-const transitionDirection = ref<1 | -1>(1);
-let previousAcceptedIndex = carousel.currentIndex.value;
-
-function resolveSlideDirection(value: unknown): 1 | -1 {
-  return value === -1 ? -1 : 1;
-}
-
-watch(carousel.currentIndex, (nextIndex) => {
-  const lastIndex = props.items.length - 1;
-  if (props.loop && previousAcceptedIndex === 0 && nextIndex === lastIndex) {
-    transitionDirection.value = -1;
-  } else if (props.loop && previousAcceptedIndex === lastIndex && nextIndex === 0) {
-    transitionDirection.value = 1;
-  } else {
-    transitionDirection.value = nextIndex >= previousAcceptedIndex ? 1 : -1;
-  }
-  previousAcceptedIndex = nextIndex;
-});
-
-const slideVariants = {
-  enter(custom: unknown) {
-    const direction = resolveSlideDirection(custom);
-    return reduceMotion.value
-      ? { opacity: 1, transform: "none" }
-      : {
-          opacity: 0,
-          transform: `translateX(${direction * 64}px) scale(0.98)`,
-        };
-  },
-  active: { opacity: 1, transform: "translateX(0) scale(1)" },
-  exit(custom: unknown) {
-    const direction = resolveSlideDirection(custom);
-    return reduceMotion.value
-      ? { opacity: 1, transform: "none" }
-      : {
-          opacity: 0,
-          transform: `translateX(${direction * -64}px) scale(0.98)`,
-        };
-  },
-};
-const slideTransition = computed(() =>
-  reduceMotion.value
-    ? { duration: 0 }
-    : { duration: 0.32, ease: [0.4, 0, 0.2, 1] as const },
-);
-
-function resolveRootProps() {
-  return mergeElementProps(attrs, carousel.rootProps);
-}
+const carousel = useDeepSeaCarousel(props, index);
 </script>
 
 <template>
   <section
-    v-bind="resolveRootProps()"
+    v-bind="carousel.rootProps"
     data-scope="carousel"
     data-part="root"
     class="n-carousel"
+    :class="props.class"
+    :style="props.style"
+    :title="props.title"
   >
     <div class="actions">
       <button
@@ -154,49 +90,60 @@ function resolveRootProps() {
 
     <div
       class="unit -presence"
-      :data-motion-policy="reduceMotion ? 'reduced' : 'animated'"
+      :data-motion-policy="carousel.reduceMotion.value ? 'reduced' : 'animated'"
     >
       <AnimatePresence
         mode="sync"
         :initial="false"
-        :custom="transitionDirection"
+        :custom="carousel.transitionDirection.value"
       >
         <motion.article
-          v-if="currentSlide"
-          :key="currentSlide.item.key"
-          v-bind="carousel.slideProps(currentSlide.item, currentSlide.itemIndex)"
+          v-if="carousel.currentSlide.value"
+          :key="carousel.currentSlide.value.item.key"
+          v-bind="
+            carousel.slideProps(
+              carousel.currentSlide.value.item,
+              carousel.currentSlide.value.itemIndex,
+            )
+          "
           data-scope="carousel"
           data-part="slide"
           data-motion-slide=""
           class="article"
-          :custom="transitionDirection"
-          :variants="slideVariants"
+          :custom="carousel.transitionDirection.value"
+          :variants="carousel.slideVariants"
           initial="enter"
           animate="active"
           exit="exit"
-          :transition="slideTransition"
+          :transition="carousel.slideTransition.value"
         >
           <img
-            v-if="currentSlide.item.imageSrc"
+            v-if="carousel.currentSlide.value.item.imageSrc"
             class="image"
-            :src="currentSlide.item.imageSrc"
-            :alt="currentSlide.item.imageAlt ?? ''"
+            :src="carousel.currentSlide.value.item.imageSrc"
+            :alt="carousel.currentSlide.value.item.imageAlt ?? ''"
           />
           <h2
-            v-bind="carousel.slideLabelProps(currentSlide.itemIndex)"
+            v-bind="carousel.slideLabelProps(carousel.currentSlide.value.itemIndex)"
             class="title"
           >
-            {{ currentSlide.item.label }}
+            {{ carousel.currentSlide.value.item.label }}
             <span class="text">
-              , {{ carousel.slidePosition(currentSlide.item, currentSlide.itemIndex) }}
+              ,
+              {{
+                carousel.slidePosition(
+                  carousel.currentSlide.value.item,
+                  carousel.currentSlide.value.itemIndex,
+                )
+              }}
             </span>
           </h2>
-          <p
-            v-if="currentSlide.item.description"
-            class="p"
+          <span
+            v-if="carousel.currentSlide.value.item.description"
+            class="text"
           >
-            {{ currentSlide.item.description }}
-          </p>
+            {{ carousel.currentSlide.value.item.description }}
+          </span>
         </motion.article>
       </AnimatePresence>
     </div>
@@ -280,7 +227,8 @@ function resolveRootProps() {
         }
       }
 
-      > .p {
+      > .text {
+        display: block;
         margin-block: var(--nagi-space-item-gap) 0;
         color: var(--nagi-color-text-muted);
       }

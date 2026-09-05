@@ -1,4 +1,4 @@
-// @nagi-source carousel/carousel.definition.ts@0.1.0
+// @deep-sea-source carousel/carousel.definition.ts@1
 import {
   defineComponentDefinition,
   defineComponentImplementation,
@@ -27,14 +27,22 @@ export const motionCarouselImplementation = defineComponentImplementation({
       name: "layout",
       value: "single-presented-slide",
       description: "Mount the accepted slide rather than exposing a scroll viewport.",
-      evidence: ["src/components/nagi/carousel/Carousel.vue", "tests/carousel-contract.spec.ts"],
+      evidence: [
+        "src/components/nagi/carousel/Carousel.vue",
+        "src/components/nagi/carousel/useDeepSeaCarousel.ts",
+        "tests/carousel-contract.spec.ts",
+      ],
     },
     {
       name: "presence",
       value: "motion-animate-presence",
       description:
         "Overlap horizontal exit and enter by the stable item key and navigation direction.",
-      evidence: ["src/components/nagi/carousel/Carousel.vue", "tests/carousel-contract.spec.ts"],
+      evidence: [
+        "src/components/nagi/carousel/Carousel.vue",
+        "src/components/nagi/carousel/useDeepSeaCarousel.ts",
+        "tests/carousel-contract.spec.ts",
+      ],
     },
     {
       name: "reduced-motion",
@@ -43,6 +51,7 @@ export const motionCarouselImplementation = defineComponentImplementation({
         "Honor the user's reduced-motion preference by default; the dedicated visual-review surface may explicitly force a Motion preview.",
       evidence: [
         "src/components/nagi/carousel/Carousel.vue",
+        "src/components/nagi/carousel/useDeepSeaCarousel.ts",
         "tests/carousel-contract.spec.ts",
         "tests/app.spec.ts",
       ],

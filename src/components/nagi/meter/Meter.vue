@@ -1,23 +1,13 @@
-<!-- @nagi-source meter/Meter.vue@0.1.0 -->
+<!-- @deep-sea-source meter/Meter.vue@1 -->
 <script setup lang="ts">
 import { motion } from "motion-v";
-import { computed, useAttrs, useId } from "vue";
+import { useAttrs } from "vue";
 
-import { mergeElementProps } from "@nagi-labs/nagi-ui";
+import { useDeepSeaMeter } from "./useDeepSeaMeter";
 
 defineOptions({ inheritAttrs: false });
 
-const {
-  label,
-  id,
-  value,
-  min = 0,
-  max = 1,
-  low,
-  high,
-  optimum,
-  motionActive = true,
-} = defineProps<{
+const props = withDefaults(defineProps<{
   label: string;
   id?: string;
   value: number;
@@ -27,35 +17,13 @@ const {
   high?: number;
   optimum?: number;
   motionActive?: boolean;
-}>();
-
-const attrs = useAttrs();
-const generatedId = useId();
-const labelId = `${generatedId}-label`;
-const normalizedValue = computed(() => {
-  const range = max - min;
-  if (range <= 0) return 0;
-  return Math.min(1, Math.max(0, (value - min) / range));
+}>(), {
+  min: 0,
+  max: 1,
+  motionActive: true,
 });
-const formattedValue = computed(() => `${Math.round(normalizedValue.value * 100)}%`);
-const visualScale = computed(() => (motionActive ? normalizedValue.value : 0));
-const meterTransition = {
-  type: "spring" as const,
-  stiffness: 210,
-  damping: 28,
-  mass: 0.8,
-};
-const meterProps = computed(() =>
-  mergeElementProps({ "aria-labelledby": labelId }, attrs, {
-    id: id ?? generatedId,
-    value,
-    min,
-    max,
-    low,
-    high,
-    optimum,
-  }),
-);
+
+const meter = useDeepSeaMeter(props, useAttrs());
 </script>
 
 <template>
@@ -66,15 +34,15 @@ const meterProps = computed(() =>
   >
     <div class="unit -heading">
       <label
-        :id="labelId"
+        :id="meter.labelId"
         class="label"
-        :for="id ?? generatedId"
-        >{{ label }}</label
+        :for="meter.controlId.value"
+        >{{ props.label }}</label
       >
       <span
         class="value"
         aria-hidden="true"
-        >{{ formattedValue }}</span
+        >{{ meter.formattedValue.value }}</span
       >
     </div>
     <div
@@ -86,16 +54,16 @@ const meterProps = computed(() =>
         class="seg -fill"
         data-part="indicator"
         :initial="{ scaleX: 0 }"
-        :animate="{ scaleX: visualScale }"
-        :transition="meterTransition"
+        :animate="{ scaleX: meter.visualScale.value }"
+        :transition="meter.transition"
       />
     </div>
     <meter
       class="meter"
       data-part="control"
-      v-bind="meterProps"
+      v-bind="meter.meterProps"
     >
-      {{ value }} / {{ max }}
+      {{ props.value }} / {{ props.max }}
     </meter>
   </div>
 </template>

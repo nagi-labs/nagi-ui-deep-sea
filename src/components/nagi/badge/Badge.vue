@@ -1,4 +1,4 @@
-<!-- @nagi-source badge/Badge.vue@0.1.0 -->
+<!-- @nagi-source badge/Badge.vue@0.1.1 -->
 <script setup lang="ts">
 import { computed, useAttrs } from "vue";
 

@@ -1,4 +1,4 @@
-<!-- @nagi-source skeleton/Skeleton.vue@0.1.0 -->
+<!-- @deep-sea-source skeleton/Skeleton.vue@1 -->
 <script setup lang="ts">
 import { computed, useAttrs } from "vue";
 
@@ -36,4 +36,5 @@ const skeletonProps = computed(() =>
     opacity: 0.55;
   }
 }
+
 </style>

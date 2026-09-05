@@ -18,25 +18,13 @@ vp install
 vp dev
 ```
 
-The workspace exempts the pinned `@nagi-labs/nagi-ui@0.1.1` package and the
+The workspace exempts the pinned `@nagi-labs/nagi-ui@0.1.2` package and the
 Nagi CSS `0.4.0` linter/core pair from the minimum-release-age gate so a fresh
 checkout can install newly published Nagi releases immediately; every other
 dependency remains subject to the default policy.
 Unovis pulls `maplibre-gl` into its dependency graph, but this line-chart sample
 does not use its map renderer, so that package's install script is explicitly
 disabled in `pnpm-workspace.yaml`.
-
-Open the project directly in StackBlitz once the repository is pushed:
-
-```text
-https://stackblitz.com/github/nagi-labs/nagi-ui-deep-sea
-```
-
-StackBlitz installs only the runtime and live-preview toolchain. Its
-`.stackblitzrc` disables the platform's full automatic install, performs a
-frozen production-only install, and then starts Vite directly. This omits
-Playwright, lint, formatting, and typecheck packages. Normal local and CI
-installs still include the complete verification toolchain.
 
 ## 90-second Nagi CSS tour
 
@@ -54,8 +42,7 @@ installs still include the complete verification toolchain.
 4. Open [`eslint.config.mjs`](eslint.config.mjs) to see the enforced Nagi CSS
    contract. A full local install can run `vp run lint` to verify surface names,
    semantic element classes, direct-child selector structure, component
-   boundaries, runtime-state attributes, and semantic-token use. The lightweight
-   StackBlitz preview intentionally omits this verification toolchain.
+   boundaries, runtime-state attributes, and semantic-token use.
 
 The application intentionally has no catch-all global component stylesheet.
 Each visible surface owns its markup and scoped CSS; the theme file owns only
@@ -76,8 +63,9 @@ The source was copied with the installed Nagi UI CLI, not duplicated by hand:
 vp exec nagi-ui own badge button card carousel combobox dialog meter sidebar sidebar-link sidebar-section skeleton table toast
 ```
 
-Every copied file carries an `@nagi-source` marker. Verify the complete baseline
-with:
+Every upstream-derived file carries an `@nagi-source` marker. Deep Sea-only
+Implementation composables carry an `@deep-sea-source` marker instead. The
+audit also rejects stale or unknown upstream bases. Verify the complete baseline with:
 
 ```sh
 vp run audit:owned
@@ -140,8 +128,8 @@ closing the native element, so Motion does not replace browser-owned behavior.
 Toast retains Nagi's manager, announcement, timer-pausing, and focus-repair
 behavior while presenting live notifications as a keyed vertical list.
 `AnimatePresence` owns enter/exit retention, `layout` animates the remaining
-items into place, and `useToastMotion.ts` contains only the native-popover exit
-handoff that Motion cannot own. This follows Motion's freely published
+items into place, and `useDeepSeaToast.ts` composes the complete Nagi Toast API
+with only the native-popover exit handoff that Motion cannot own. This follows Motion's freely published
 [Vue AnimatePresence modes example](https://motion.dev/examples/vue-animate-presence-modes).
 The package Blueprint and Deep Sea
 stack now execute the same `nagi/toast@1` Contract, while insertion, stacking,
@@ -177,7 +165,8 @@ vp run test:browser
 vp build
 ```
 
-The repository installs the public `@nagi-labs/nagi-ui@0.1.1` package. The
+The repository installs the public registry release
+`@nagi-labs/nagi-ui@0.1.2` directly. No packed local copy is committed. The
 owned source remains self-contained in this repository, while the installed
 package supplies the CLI, shared runtime helpers, and verification contracts.
 

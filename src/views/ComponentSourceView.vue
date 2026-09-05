@@ -4,15 +4,11 @@ import { useRoute, useRouter } from "vue-router";
 
 import { NBadge, NButton, NCard } from "../components/nagi";
 import SourceBrowser from "../components/SourceBrowser.vue";
-import {
-  componentGroups,
-  ownedComponentCount,
-  ownedSourceFileCount,
-  verifiedDefinitions,
-} from "../data/components";
+import { componentGroups, ownedComponentCount, testedContracts } from "../data/components";
 import {
   defaultSourceId,
   findSourceFile,
+  ownedSourceFileCount,
   pageSourceFiles,
   primaryComponentSourceId,
   sourceFilesForOwner,
@@ -48,7 +44,7 @@ watch(() => route.query.source, synchronizeRouteSource);
       <div class="unit -heading">
         <span class="text -eyebrow">Source ownership</span>
         <h1 class="title">Owned component source</h1>
-        <p class="p -lede">
+        <p class="p">
           Every component shown here is used by Deep Sea. Its Vue template, behavior wiring, styles,
           and available Definition can be reviewed beside the interface it produces.
         </p>
@@ -76,8 +72,8 @@ watch(() => route.query.source, synchronizeRouteSource);
         <span class="text">owned source files</span>
       </article>
       <article class="article">
-        <strong class="strong">{{ verifiedDefinitions.size }}</strong>
-        <span class="text">verified Definitions</span>
+        <strong class="strong">{{ testedContracts.size }}</strong>
+        <span class="text">tested Contracts</span>
       </article>
     </section>
 
@@ -99,7 +95,7 @@ watch(() => route.query.source, synchronizeRouteSource);
             <span class="text">
               Deep Sea styles the owned Button through component-local CSS axes.
             </span>
-            <n-button class="n-button">Styled action</n-button>
+            <n-button>Styled action</n-button>
           </div>
         </div>
       </template>
@@ -119,7 +115,7 @@ watch(() => route.query.source, synchronizeRouteSource);
               >
                 Page source
               </h2>
-              <p class="p">The application composing the owned components.</p>
+              <span class="text">The application composing the owned components.</span>
             </div>
           </header>
           <ul class="list">
@@ -145,7 +141,7 @@ watch(() => route.query.source, synchronizeRouteSource);
           <header class="header">
             <div class="unit -heading">
               <h2 class="title">Owned components</h2>
-              <p class="p">The 13 components used by this interface.</p>
+              <span class="text">The 13 components used by this interface.</span>
             </div>
           </header>
 
@@ -172,8 +168,8 @@ watch(() => route.query.source, synchronizeRouteSource);
                 >
                   <code class="code">{{ component }}.vue</code>
                   <n-badge
-                    v-if="verifiedDefinitions.has(component)"
-                    label="Definition verified"
+                    v-if="testedContracts.has(component)"
+                    label="Contract tested"
                     tone="success"
                   />
                   <n-badge
@@ -215,7 +211,7 @@ watch(() => route.query.source, synchronizeRouteSource);
       max-inline-size: 38rem;
 
       > .text.-eyebrow,
-      > .p.-lede {
+      > .p {
         color: var(--nagi-color-text-muted);
         font-size: var(--n-font-size-2);
       }
@@ -284,7 +280,8 @@ watch(() => route.query.source, synchronizeRouteSource);
               font-weight: 620;
             }
 
-            > .p {
+            > .text {
+              display: block;
               margin: var(--n-space-1) 0 0;
               color: var(--nagi-color-text-muted);
               font-size: var(--n-font-size-1);

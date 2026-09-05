@@ -91,7 +91,7 @@ onMounted(() => {
         <div class="unit -heading">
           <span class="text -eyebrow">Pacific monitoring network</span>
           <h1 class="title">Network overview</h1>
-          <p class="p -lede">Station health, signal quality, and scheduled transfers.</p>
+          <span class="text -lede">Station health, signal quality, and scheduled transfers.</span>
         </div>
         <div class="actions">
           <router-link
@@ -101,7 +101,7 @@ onMounted(() => {
             View page source
           </router-link>
           <n-button
-            class="n-button -sync"
+            class="-sync n-button"
             :disabled="syncing"
             @click="syncNetwork"
           >
@@ -125,10 +125,10 @@ onMounted(() => {
             description="Export the current operational snapshot for the handover log."
           >
             <div class="n-dialog-content">
-              <p class="p">
+              <span class="text">
                 The report includes station status, the selected signal history, and the latest
                 telemetry received by this browser session.
-              </p>
+              </span>
             </div>
             <template #actions>
               <div class="n-dialog-actions">
@@ -247,7 +247,7 @@ onMounted(() => {
         <header class="header">
           <div class="unit -heading">
             <h2 class="title">Stations</h2>
-            <p class="p">Priority stations ordered by operational status.</p>
+            <span class="text">Priority stations ordered by operational status.</span>
           </div>
           <time class="time">Updated {{ lastSync }}</time>
         </header>
@@ -356,7 +356,8 @@ onMounted(() => {
           line-height: 1.08;
         }
 
-        > .p.-lede {
+        > .text.-lede {
+          display: block;
           margin: var(--n-space-3) 0 0;
           color: var(--nagi-color-text-muted);
           font-size: var(--n-font-size-4);
@@ -413,7 +414,8 @@ onMounted(() => {
           --dialog-surface-border-color: var(--nagi-color-border-strong);
 
           .n-dialog-content {
-            > .p {
+            > .text {
+              display: block;
               max-inline-size: 32rem;
               margin: 0;
               color: var(--nagi-color-text-muted);
@@ -556,7 +558,8 @@ onMounted(() => {
             font-weight: 650;
           }
 
-          > .p {
+          > .text {
+            display: block;
             margin: var(--n-space-1) 0 0;
             color: var(--nagi-color-text-muted);
             font-size: var(--n-font-size-1);

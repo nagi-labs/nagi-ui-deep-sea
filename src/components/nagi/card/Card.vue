@@ -1,4 +1,4 @@
-<!-- @nagi-source card/Card.vue@0.1.0 -->
+<!-- @nagi-source card/Card.vue@0.1.1 -->
 <script setup lang="ts">
 import { useAttrs } from "vue";
 
@@ -20,28 +20,28 @@ const attrs = useAttrs();
       v-if="title || description || $slots.title || $slots.description"
       class="header"
     >
-      <div
+      <span
         v-if="title || $slots.title"
-        class="unit -heading"
+        class="text"
       >
         <slot
           name="title"
           :title="title"
           >{{ title }}</slot
         >
-      </div>
+      </span>
       <div
         v-if="description || $slots.description"
-        class="text"
+        class="unit"
       >
         <slot
           name="description"
           :description="description"
-          >{{ description }}</slot
+          ><span class="text">{{ description }}</span></slot
         >
       </div>
     </header>
-    <div class="unit -primary">
+    <div class="unit">
       <slot />
     </div>
     <div
@@ -65,19 +65,20 @@ const attrs = useAttrs();
   > .header {
     padding: var(--n-space-8) var(--n-space-8) 0;
 
-    > .unit.-heading {
+    > .text {
       margin: 0;
       font-size: var(--n-font-size-5);
+      font-weight: 700;
     }
 
-    > .text {
+    > .unit {
       margin-block: var(--n-space-3) 0;
       color: var(--nagi-color-text-muted);
       font-size: var(--n-font-size-3);
     }
   }
 
-  > .unit.-primary {
+  > .unit {
     padding: var(--n-space-8);
   }
 

@@ -1,4 +1,4 @@
-<!-- @nagi-source combobox/Combobox.vue@0.1.0 -->
+<!-- @deep-sea-source combobox/Combobox.vue@1 -->
 <script lang="ts">
 export interface ComboboxOption {
   key: string;
@@ -9,9 +9,9 @@ export interface ComboboxOption {
 
 <script setup lang="ts">
 import { motion, MotionConfig } from "motion-v";
-import { useAttrs, useId } from "vue";
+import { useId, type StyleValue } from "vue";
 
-import { useCombobox } from "@nagi-labs/nagi-ui";
+import { useDeepSeaCombobox } from "./useDeepSeaCombobox";
 
 defineOptions({ inheritAttrs: false });
 
@@ -20,6 +20,8 @@ const props = withDefaults(
     label: string;
     items: readonly ComboboxOption[];
     id?: string;
+    class?: string;
+    style?: StyleValue;
     placeholder?: string;
     inputmode?: "none" | "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url";
     enterkeyhint?: "enter" | "done" | "go" | "next" | "previous" | "search" | "send";
@@ -68,7 +70,6 @@ const props = withDefaults(
     forceMotionPreview: false,
   },
 );
-const attrs = useAttrs();
 const emit = defineEmits<{
   input: [event: Event];
   compositionstart: [event: CompositionEvent];
@@ -82,30 +83,17 @@ const emit = defineEmits<{
 const inputValue = defineModel<string>({ default: "" });
 const selected = defineModel<string | null>("selected", { default: null });
 const labelId = useId();
-const combobox = useCombobox(props, inputValue, selected);
+const combobox = useDeepSeaCombobox(props, inputValue, selected);
 const { activeKey, open, visibleItems } = combobox;
-const popupVariants = {
-  closed: { opacity: 0, y: -16, scale: 0.94, filter: "blur(10px)" },
-  open: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
-};
-const popupTransition = {
-  type: "spring" as const,
-  visualDuration: 0.42,
-  bounce: 0.16,
-};
-const indicatorTransition = {
-  type: "spring" as const,
-  visualDuration: 0.34,
-  bounce: 0.2,
-};
 </script>
 
 <template>
   <div
-    v-bind="attrs"
     data-scope="combobox"
     data-part="root"
     class="n-combobox"
+    :class="props.class"
+    :style="props.style"
   >
     <label
       :id="labelId"
@@ -186,9 +174,9 @@ const indicatorTransition = {
           data-motion-combobox-surface
           :data-motion-policy="forceMotionPreview ? 'animated' : 'user'"
           :initial="false"
-          :variants="popupVariants"
+          :variants="combobox.popupVariants"
           :animate="open ? 'open' : 'closed'"
-          :transition="popupTransition"
+          :transition="combobox.popupTransition"
         >
           <ul
             class="list"
@@ -211,7 +199,7 @@ const indicatorTransition = {
                 data-motion-active-indicator
                 aria-hidden="true"
                 :layout-id="`${combobox.id}-active-indicator`"
-                :transition="indicatorTransition"
+                :transition="combobox.indicatorTransition"
               />
               <span class="text">{{ item.label }}</span>
             </li>

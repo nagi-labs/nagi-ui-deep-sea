@@ -1,4 +1,4 @@
-// @nagi-source combobox/combobox.definition.ts@0.1.0
+// @deep-sea-source combobox/combobox.definition.ts@1
 import {
   defineComponentDefinition,
   defineComponentImplementation,

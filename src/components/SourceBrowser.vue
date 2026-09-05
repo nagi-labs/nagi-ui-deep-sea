@@ -15,9 +15,9 @@ defineEmits<{
   <article class="deep-sea-source-browser">
     <header class="header">
       <div class="unit -heading">
-        <span class="text">{{ source.ownerLabel }} · {{ source.language }}</span>
+        <span class="text -meta">{{ source.ownerLabel }} · {{ source.language }}</span>
         <h2 class="title">{{ source.label }}</h2>
-        <p class="p">{{ source.description }}</p>
+        <span class="text -description">{{ source.description }}</span>
         <code class="code">{{ source.path }}</code>
       </div>
       <a
@@ -84,7 +84,7 @@ defineEmits<{
       display: grid;
       min-inline-size: 0;
 
-      > .text {
+      > .text.-meta {
         color: var(--nagi-color-accent);
         font-size: var(--n-font-size-1);
         font-weight: 650;
@@ -98,7 +98,8 @@ defineEmits<{
         font-weight: 620;
       }
 
-      > .p {
+      > .text.-description {
+        display: block;
         margin: var(--n-space-2) 0 0;
         color: var(--nagi-color-text-muted);
         font-size: var(--n-font-size-2);

@@ -1,4 +1,4 @@
-<!-- @nagi-source table/Table.vue@0.1.0 -->
+<!-- @nagi-source table/Table.vue@0.1.1 -->
 <script lang="ts">
 export type TableColumnAlign = "start" | "center" | "end";
 

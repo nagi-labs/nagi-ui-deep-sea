@@ -1,4 +1,4 @@
-<!-- @nagi-source sidebar-section/SidebarSection.vue@0.1.0 -->
+<!-- @nagi-source sidebar-section/SidebarSection.vue@0.1.1 -->
 <script setup lang="ts">
 import { mergeElementProps } from "@nagi-labs/nagi-ui";
 import { computed, useAttrs, useId } from "vue";
@@ -37,7 +37,8 @@ const sectionProps = computed(() =>
 
 <style scoped>
 .n-sidebar-section {
-  --local-label-tracking: 0.06em;
+  --local-title-tracking: 0.06em;
+
   display: grid;
   gap: var(--n-space-1);
 
@@ -46,7 +47,7 @@ const sectionProps = computed(() =>
     color: var(--nagi-color-text-muted);
     font-size: var(--nagi-font-size-label);
     font-weight: 600;
-    letter-spacing: var(--local-label-tracking);
+    letter-spacing: var(--local-title-tracking);
     text-transform: uppercase;
   }
 

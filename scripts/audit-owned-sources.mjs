@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ownedRoot = path.join(repositoryRoot, "src/components/nagi");
@@ -41,7 +41,7 @@ const sourceFiles = expectedComponents.flatMap((component) =>
 
 const missingMarkers = sourceFiles.filter((file) => {
   const firstLine = fs.readFileSync(file, "utf8").split("\n", 1)[0];
-  return !firstLine.includes("@nagi-source");
+  return !/@(?:nagi|deep-sea)-source\b/u.test(firstLine);
 });
 
 if (missingMarkers.length > 0) {
@@ -50,6 +50,24 @@ if (missingMarkers.length > 0) {
   );
 }
 
+const packageJson = fileURLToPath(import.meta.resolve("@nagi-labs/nagi-ui/package.json"));
+const packageRoot = path.dirname(packageJson);
+const { diffOwned } = await import(pathToFileURL(path.join(packageRoot, "cli/ownership.mjs")).href);
+const invalidUpstream = diffOwned(ownedRoot, { packageRoot }).filter(
+  (entry) => entry.status === "drifted" || entry.status === "unknown-source",
+);
+
+if (invalidUpstream.length > 0) {
+  throw new Error(
+    `Owned sources require an upstream rebase:\n${invalidUpstream
+      .map(
+        (entry) =>
+          `${path.relative(repositoryRoot, entry.file)} (${entry.status}, base ${entry.marker.version})`,
+      )
+      .join("\n")}`,
+  );
+}
+
 console.log(
-  `Owned source audit: ${expectedComponents.length} components and ${sourceFiles.length} provenance-marked files.`,
+  `Owned source audit: ${expectedComponents.length} components and ${sourceFiles.length} current provenance-marked files.`,
 );

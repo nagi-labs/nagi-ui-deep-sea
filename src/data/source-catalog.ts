@@ -179,6 +179,8 @@ export const componentSourceFiles = componentGroups.flatMap((group) =>
   }),
 );
 
+export const ownedSourceFileCount = componentSourceFiles.length;
+
 export const sourceFiles: readonly SourceFile[] = [...pageSourceFiles, ...componentSourceFiles];
 
 export const defaultSourceId = pageSourceFiles[0].id;

@@ -10,13 +10,13 @@ import { NSkeleton } from "./nagi";
   >
     <header class="header">
       <div class="unit -copy">
-        <n-skeleton class="n-skeleton -eyebrow" />
-        <n-skeleton class="n-skeleton -heading" />
-        <n-skeleton class="n-skeleton -lede" />
+        <n-skeleton class="-eyebrow n-skeleton" />
+        <n-skeleton class="-heading n-skeleton" />
+        <n-skeleton class="-lede n-skeleton" />
       </div>
       <div class="actions">
-        <n-skeleton class="n-skeleton -action" />
-        <n-skeleton class="n-skeleton -action -primary" />
+        <n-skeleton class="-action n-skeleton" />
+        <n-skeleton class="-action -primary n-skeleton" />
       </div>
     </header>
 
@@ -26,60 +26,60 @@ import { NSkeleton } from "./nagi";
         :key="index"
         class="article"
       >
-        <n-skeleton class="n-skeleton -metric-label" />
-        <n-skeleton class="n-skeleton -number" />
-        <n-skeleton class="n-skeleton -annotation" />
+        <n-skeleton class="-metric-label n-skeleton" />
+        <n-skeleton class="-number n-skeleton" />
+        <n-skeleton class="-annotation n-skeleton" />
       </article>
     </section>
 
     <section class="section -operations">
       <article class="article -chart">
-        <n-skeleton class="n-skeleton -short" />
-        <n-skeleton class="n-skeleton -medium" />
+        <n-skeleton class="-short n-skeleton" />
+        <n-skeleton class="-medium n-skeleton" />
         <div class="unit -choices">
           <n-skeleton
             v-for="index in 5"
             :key="index"
-            class="n-skeleton -choice"
+            class="-choice n-skeleton"
           />
         </div>
-        <n-skeleton class="n-skeleton -reading" />
-        <n-skeleton class="n-skeleton -chart" />
+        <n-skeleton class="-reading n-skeleton" />
+        <n-skeleton class="-chart n-skeleton" />
       </article>
 
       <aside class="aside">
         <div class="unit -heading">
           <div class="seg">
-            <n-skeleton class="n-skeleton -eyebrow" />
-            <n-skeleton class="n-skeleton -heading" />
+            <n-skeleton class="-eyebrow n-skeleton" />
+            <n-skeleton class="-heading n-skeleton" />
           </div>
-          <n-skeleton class="n-skeleton -pill" />
+          <n-skeleton class="-pill n-skeleton" />
         </div>
-        <n-skeleton class="n-skeleton -control" />
+        <n-skeleton class="-control n-skeleton" />
         <div class="unit -meters">
           <n-skeleton
             v-for="index in 3"
             :key="index"
-            class="n-skeleton -bar"
+            class="-bar n-skeleton"
           />
         </div>
-        <n-skeleton class="n-skeleton -grid" />
+        <n-skeleton class="-grid n-skeleton" />
       </aside>
     </section>
 
     <section class="section -stations">
       <div class="unit -heading">
         <div class="seg">
-          <n-skeleton class="n-skeleton -heading" />
-          <n-skeleton class="n-skeleton -medium" />
+          <n-skeleton class="-heading n-skeleton" />
+          <n-skeleton class="-medium n-skeleton" />
         </div>
-        <n-skeleton class="n-skeleton -updated" />
+        <n-skeleton class="-updated n-skeleton" />
       </div>
       <div class="unit -table-preview">
         <n-skeleton
           v-for="index in 6"
           :key="index"
-          class="n-skeleton -row-preview"
+          class="-row-preview n-skeleton"
         />
       </div>
     </section>

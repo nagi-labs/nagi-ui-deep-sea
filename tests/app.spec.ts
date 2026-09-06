@@ -31,7 +31,7 @@ test("the command deck is operable and accessible", async ({ page }) => {
   );
   await expect(page.getByRole("link", { name: "How Nagi CSS checks this" })).toHaveAttribute(
     "href",
-    "https://nagi-labs.github.io/nagi-css/#test",
+    "https://nagi-labs.github.io/nagi-css/#example",
   );
   await expect(page.getByRole("link", { name: "Discuss ownership model" })).toHaveAttribute(
     "href",

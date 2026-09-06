@@ -102,7 +102,7 @@ onMounted(() => {
           </router-link>
           <a
             class="link"
-            href="https://nagi-labs.github.io/nagi-css/#test"
+            href="https://nagi-labs.github.io/nagi-css/#example"
           >
             How Nagi CSS checks this
           </a>

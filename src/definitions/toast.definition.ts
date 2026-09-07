@@ -95,7 +95,7 @@ export const motionToastImplementation = defineComponentImplementation({
       id: "DEEP_SEA_TOAST_IMPLEMENTATION_03",
       classification: "implementation-constraint",
       source: "Deep Sea notification stack motion",
-      text: "Insertion, keyed vertical reflow, and removal use non-zero Motion transitions in the forced showcase profile.",
+      text: "Insertion, keyed vertical reflow, and removal use non-zero Motion transitions in the explicitly forced verification profile.",
       evidence: ["tests/toast.spec.ts"],
       origin: { kind: "nagi", policy: "deep-sea-toast-motion-stack", policyVersion: "1" },
     },

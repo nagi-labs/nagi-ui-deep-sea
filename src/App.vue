@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { AnimatePresence, motion } from "motion-v";
+import { AnimatePresence, motion, MotionConfig } from "motion-v";
 import { RouterLink, RouterView } from "vue-router";
 
 import { NSidebar, NSidebarLink, NSidebarSection } from "./components/nagi";
+import { useUserReducedMotion } from "./composables/useUserReducedMotion";
 
 const navigation = [
   { label: "Overview", to: "/" },
@@ -10,6 +11,7 @@ const navigation = [
 ] as const;
 
 const appVersion = __DEEP_SEA_VERSION__;
+const userPrefersReducedMotion = useUserReducedMotion();
 </script>
 
 <template>
@@ -97,23 +99,25 @@ const appVersion = __DEEP_SEA_VERSION__;
         </nav>
       </header>
 
-      <router-view v-slot="{ Component, route }">
-        <AnimatePresence
-          mode="wait"
-          :initial="false"
-        >
-          <motion.div
-            :key="route.path"
-            class="seg -route"
-            :initial="{ opacity: 0, x: 8 }"
-            :animate="{ opacity: 1, x: 0 }"
-            :exit="{ opacity: 0, x: -8 }"
-            :transition="{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }"
+      <motion-config :reduced-motion="userPrefersReducedMotion ? 'always' : 'never'">
+        <router-view v-slot="{ Component, route }">
+          <AnimatePresence
+            mode="wait"
+            :initial="false"
           >
-            <component :is="Component" />
-          </motion.div>
-        </AnimatePresence>
-      </router-view>
+            <motion.div
+              :key="route.path"
+              class="seg -route"
+              :initial="{ opacity: 0, x: 8 }"
+              :animate="{ opacity: 1, x: 0 }"
+              :exit="{ opacity: 0, x: -8 }"
+              :transition="{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }"
+            >
+              <component :is="Component" />
+            </motion.div>
+          </AnimatePresence>
+        </router-view>
+      </motion-config>
     </div>
   </div>
 </template>

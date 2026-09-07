@@ -153,8 +153,8 @@ test.describe(
 
     async function DEEP_SEA_DIALOG_IMPLEMENTATION_03({ page }: { page: Page }) {
       await page.emulateMedia({ reducedMotion: "reduce" });
-      await page.reload();
-      const trigger = page.getByRole("button", { name: "Create report" });
+      await page.goto("/dialog-contract");
+      const trigger = page.getByRole("button", { name: "Open Deep Sea dialog" });
       const nativeDialog = page.locator('dialog[data-scope="dialog"][data-part="surface"]');
       const enterSamplesPromise = sampleSurfaceAfterState(nativeDialog, "open");
       await trigger.click();

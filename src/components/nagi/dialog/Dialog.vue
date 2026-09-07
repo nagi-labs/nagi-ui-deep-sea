@@ -5,6 +5,7 @@ import type { StyleValue } from "vue";
 
 import { type DialogClosedBy } from "@nagi-labs/nagi-ui";
 import { useDeepSeaDialog } from "./useDeepSeaDialog";
+import { useUserReducedMotion } from "../../../composables/useUserReducedMotion";
 
 const props = withDefaults(
   defineProps<{
@@ -30,6 +31,7 @@ defineOptions({ inheritAttrs: false });
 
 const requestedOpen = defineModel<boolean>("open", { default: false });
 const dialog = useDeepSeaDialog(props, requestedOpen);
+const userPrefersReducedMotion = useUserReducedMotion();
 
 defineExpose({ show: dialog.show, close: dialog.close, toggle: dialog.toggle });
 </script>
@@ -43,7 +45,9 @@ defineExpose({ show: dialog.show, close: dialog.close, toggle: dialog.toggle });
     data-part="root"
     class="n-dialog"
   >
-    <motion-config :reduced-motion="forceMotionPreview ? 'never' : 'user'">
+    <motion-config
+      :reduced-motion="forceMotionPreview ? 'never' : userPrefersReducedMotion ? 'always' : 'never'"
+    >
       <motion.button
         data-scope="dialog"
         data-part="trigger"
@@ -62,7 +66,7 @@ defineExpose({ show: dialog.show, close: dialog.close, toggle: dialog.toggle });
         data-part="surface"
         :aria-labelledby="dialog.titleId"
         :aria-describedby="description || $slots.description ? dialog.descriptionId : undefined"
-        :data-motion-policy="forceMotionPreview ? 'animated' : 'user'"
+        :data-motion-policy="forceMotionPreview ? 'animated' : userPrefersReducedMotion ? 'reduced' : 'animated'"
         :data-motion-state="dialog.surfacePresent.value ? 'open' : 'closing'"
         v-bind="dialog.dialogProps"
       >

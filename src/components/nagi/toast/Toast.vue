@@ -5,6 +5,7 @@ import type { StyleValue } from "vue";
 
 import { type ToastManager } from "@nagi-labs/nagi-ui";
 import { useDeepSeaToast } from "./useDeepSeaToast";
+import { useUserReducedMotion } from "../../../composables/useUserReducedMotion";
 
 defineOptions({ inheritAttrs: false });
 
@@ -30,6 +31,7 @@ const props = withDefaults(
   },
 );
 const notifier = useDeepSeaToast(props);
+const userPrefersReducedMotion = useUserReducedMotion();
 const toastTransition = {
   type: "spring" as const,
   visualDuration: 0.36,
@@ -73,11 +75,13 @@ defineExpose({
       class="unit -stack"
       v-bind="notifier.regionProps"
     >
-      <motion-config :reduced-motion="forceMotionPreview ? 'never' : 'user'">
+      <motion-config
+        :reduced-motion="forceMotionPreview ? 'never' : userPrefersReducedMotion ? 'always' : 'never'"
+      >
         <motion.ol
           class="list"
           data-motion-toast-stack
-          :data-motion-policy="forceMotionPreview ? 'animated' : 'user'"
+          :data-motion-policy="forceMotionPreview ? 'animated' : userPrefersReducedMotion ? 'reduced' : 'animated'"
           layout
           :transition="toastTransition"
         >

@@ -25,6 +25,7 @@ const applicationSourceModules = import.meta.glob<string>(
     "../App.vue",
     "../components/DashboardSkeleton.vue",
     "../components/SignalQualityCard.vue",
+    "../composables/useUserReducedMotion.ts",
     "./stations.ts",
     "../theme/deep-sea.css",
     "../views/ComponentSourceView.vue",
